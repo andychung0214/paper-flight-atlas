@@ -1,0 +1,11 @@
+{
+  "name": "paper-flight-atlas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "紙翼圖鑑：紙飛機教學圖鑑網頁遊戲",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests",
+    "serve": "python -m http.server 4173"
+  }
+}
