@@ -78,6 +78,7 @@ function renderThemeSwitcher(theme, route, fallbackPlaneId) {
           class="button button--ghost theme-switcher__button"
           data-action="theme"
           data-theme="${escapeHtml(option.id)}"
+          data-focus-key="${escapeHtml(`theme:${option.id}`)}"
           data-hash="${currentHash}"
           aria-pressed="${theme === option.id}"
         >${escapeHtml(option.label)}</button>
@@ -114,6 +115,7 @@ function renderFavoriteButton(planeId, favorites, hash) {
       class="button button--ghost"
       data-action="favorite"
       data-plane-id="${escapeHtml(planeId)}"
+      data-focus-key="${escapeHtml(`favorite:${planeId}`)}"
       data-hash="${escapeHtml(hash)}"
       aria-pressed="${isFavorite}"
     >${isFavorite ? '收藏中' : '加入收藏'}</button>
@@ -191,6 +193,7 @@ function renderDifficultyFilters(planes, activeDifficulty) {
             class="button button--ghost"
             data-action="filter"
             data-difficulty="${escapeHtml(item.id)}"
+            data-focus-key="${escapeHtml(`filter:${item.id}`)}"
             data-hash="${escapeHtml(buildCatalogHash())}"
             aria-pressed="${selected}"
           >${escapeHtml(item.label)}<span class="annotation-count">${item.count}</span></button>

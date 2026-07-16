@@ -89,6 +89,14 @@ function updateLiveRegion(documentRef, message) {
   }
 }
 
+function restoreFocus(documentRef, focusKey) {
+  if (!focusKey) {
+    return;
+  }
+
+  documentRef?.querySelector?.(`[data-focus-key="${focusKey}"]`)?.focus?.();
+}
+
 function getState(documentRef, windowRef) {
   const existing = mountStates.get(documentRef);
 
@@ -105,7 +113,7 @@ function getState(documentRef, windowRef) {
   return nextState;
 }
 
-function renderCurrentRoute(documentRef, windowRef, state, announcement) {
+function renderCurrentRoute(documentRef, windowRef, state, announcement, focusKey) {
   const appRoot = documentRef?.getElementById?.('app');
 
   if (!appRoot) {
@@ -130,6 +138,7 @@ function renderCurrentRoute(documentRef, windowRef, state, announcement) {
   );
 
   appRoot.innerHTML = rendered.html;
+  restoreFocus(documentRef, focusKey);
 
   if (documentRef?.documentElement?.dataset) {
     documentRef.documentElement.dataset.theme = theme;
@@ -197,7 +206,7 @@ function closeDiagramDialog(dialog, state) {
 }
 
 function bindInteractions(documentRef, windowRef, state) {
-  const rerender = message => renderCurrentRoute(documentRef, windowRef, state, message);
+  const rerender = (message, focusKey) => renderCurrentRoute(documentRef, windowRef, state, message, focusKey);
 
   documentRef.addEventListener('click', event => {
     const actionTarget = event.target?.closest?.('[data-action]');
@@ -239,13 +248,16 @@ function bindInteractions(documentRef, windowRef, state) {
           state.preferences.toggleFavorite(actionTarget.dataset.planeId);
         }
 
-        rerender();
+        rerender(undefined, actionTarget.dataset.focusKey);
         return;
       }
 
       case 'theme': {
         const nextTheme = state.preferences.setTheme(actionTarget.dataset.theme);
-        rerender(`主題已切換為 ${nextTheme === 'forest' ? '森林綠' : nextTheme === 'wine' ? '酒紅色' : '倫敦藍'}`);
+        rerender(
+          `主題已切換為 ${nextTheme === 'forest' ? '森林綠' : nextTheme === 'wine' ? '酒紅色' : '倫敦藍'}`,
+          actionTarget.dataset.focusKey,
+        );
         return;
       }
 
@@ -257,6 +269,7 @@ function bindInteractions(documentRef, windowRef, state) {
           state.activeDifficulty
             ? `已套用 ${DIFFICULTY_LABELS[state.activeDifficulty] ?? '目前'} 篩選`
             : '已清除難度篩選',
+          actionTarget.dataset.focusKey,
         );
         return;
       }
