@@ -26,6 +26,15 @@ test('unknown diagram falls back to a safe SVG', () => {
   assert.match(renderFoldDiagram('invalid', '預設示意圖'), /aria-label="預設示意圖"/);
 });
 
+test('prototype keys fall back to a safe SVG', () => {
+  const svg = renderFoldDiagram('__proto__', '測試');
+
+  assert.match(svg, /^<svg/);
+  assert.match(svg, /role="img"/);
+  assert.match(svg, /aria-label="測試"/);
+  assert.doesNotMatch(svg, /<script/i);
+});
+
 test('escapes unsafe label characters in SVG attributes', () => {
   const svg = renderFoldDiagram('crease-center', '中心線 "雙向" & <安全>');
 

@@ -131,7 +131,9 @@ function renderDiagramContent(definition) {
 }
 
 export function renderFoldDiagram(diagramId, label) {
-  const definition = DIAGRAMS[diagramId] ?? DIAGRAMS[DEFAULT_DIAGRAM_ID];
+  const definition = Object.hasOwn(DIAGRAMS, diagramId)
+    ? DIAGRAMS[diagramId]
+    : DIAGRAMS[DEFAULT_DIAGRAM_ID];
   const ariaLabel = escapeAttribute(label ?? '');
 
   return [

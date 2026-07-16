@@ -58,3 +58,61 @@ npm test
 - `src/diagrams.js`
 - `tests/diagrams.test.mjs`
 
+## 2026-07-16 補充修正：原型鍵回退安全性
+
+### 問題
+
+`renderFoldDiagram()` 原本直接以 `DIAGRAMS[diagramId]` 讀取一般物件內容，當 `diagramId` 為 `__proto__`、`constructor`、`toString` 等繼承屬性時，會繞過未知識別碼回退邏輯，並可能在後續渲染時拋出例外。
+
+### RED 證據
+
+新增回歸測試：
+
+- `tests/diagrams.test.mjs`
+
+執行焦點測試：
+
+```bash
+npm test -- --test-name-pattern="prototype keys"
+```
+
+失敗結果：
+
+```text
+TypeError: Cannot read properties of undefined (reading 'map')
+```
+
+這確認了 `__proto__` 會走到錯誤的物件內容，且測試先於修正確實暴露了問題。
+
+### GREEN 證據
+
+修正方式：
+
+- `src/diagrams.js`
+- 改為 `Object.hasOwn(DIAGRAMS, diagramId)` 後才取值，否則一律回退到 `crease-center`
+
+重新執行焦點測試：
+
+```bash
+npm test -- --test-name-pattern="prototype keys"
+```
+
+結果：通過，`1..13` 全部測試皆通過。
+
+執行完整測試：
+
+```bash
+npm test
+```
+
+結果：
+
+- 13 項測試
+- 13 項通過
+- 0 項失敗
+
+### 修正摘要
+
+- 只新增 own-property 檢查，未改動 SVG 產生內容
+- 保留既有未知識別碼回退行為
+- 回歸測試覆蓋 `__proto__` 這類原型鍵輸入，確保安全性
