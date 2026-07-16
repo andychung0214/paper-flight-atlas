@@ -53,6 +53,16 @@ test('renderCatalog renders eight specimen cards and supports filtering', () => 
   assert.match(filteredHtml, /aria-pressed="true"[^>]*>大師/);
 });
 
+test('renderCatalog uses Traditional Chinese section labels', () => {
+  const html = renderCatalog({
+    planes,
+    favorites: [],
+  });
+
+  assert.match(html, /紙樣標本卡/);
+  assert.doesNotMatch(html, /Paper specimen cards/);
+});
+
 test('renderGuide renders the current step, progress, and trusted SVG', () => {
   const plane = planes[1];
   const html = renderGuide({
@@ -76,6 +86,44 @@ test('renderAbout includes paper safety guidance', () => {
   assert.match(html, /紙材安全提示/);
   assert.match(html, /請避開潮濕紙張與過度鋒利的紙角/);
   assert.match(html, /內容授權與使用說明/);
+});
+
+test('renderAbout and app footer use Traditional Chinese section labels', () => {
+  const aboutHtml = renderAbout();
+  const app = renderApp({
+    route: { page: 'about' },
+    planes,
+    theme: 'forest',
+    favorites: [],
+  });
+
+  assert.match(aboutHtml, /工坊筆記/);
+  assert.match(aboutHtml, /典藏說明/);
+  assert.doesNotMatch(aboutHtml, /Workshop notes/);
+  assert.doesNotMatch(aboutHtml, /Archive/);
+  assert.match(app.html, /靜折手記/);
+  assert.doesNotMatch(app.html, /Quiet fold notes/);
+});
+
+test('renderApp normalizes missing plane routes to catalog state', () => {
+  const rendered = renderApp({
+    route: {
+      page: 'plane',
+      id: 'missing-plane',
+      step: 2,
+    },
+    planes,
+    theme: 'forest',
+    favorites: [],
+  });
+
+  assert.match(rendered.title, /找不到機型｜紙翼圖鑑/);
+  assert.match(rendered.description, /找不到指定機型，已回到紙翼圖鑑繼續挑選/);
+  assert.match(rendered.html, /data-page="catalog"/);
+  assert.match(rendered.html, /找不到指定機型，先回到圖鑑挑一張新的紙樣卡吧/);
+  assert.match(rendered.html, /紙樣標本卡/);
+  assert.doesNotMatch(rendered.html, /data-page="plane"/);
+  assert.doesNotMatch(rendered.html, /data-hash="#plane\/missing-plane\/step\/2"/);
 });
 
 test('renderApp returns metadata and escapes unsafe plane content', () => {

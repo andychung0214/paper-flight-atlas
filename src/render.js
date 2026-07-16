@@ -244,7 +244,7 @@ export function renderCatalog({ planes, favorites, activeDifficulty }) {
   return `
     <section class="catalog-shell">
       <div class="catalog-shell__intro paper-panel">
-        <p class="annotation-label">Paper specimen cards</p>
+        <p class="annotation-label">紙樣標本卡</p>
         <h2>機型圖鑑</h2>
         <p>依照今天想練習的節奏，從四個難度中挑一張紙樣卡，先讀飛行特性，再決定要不要收藏。</p>
       </div>
@@ -323,7 +323,7 @@ export function renderAbout() {
   return `
     <section class="about-layout">
       <article class="paper-panel">
-        <p class="annotation-label">Workshop notes</p>
+        <p class="annotation-label">工坊筆記</p>
         <h2>紙材安全提示</h2>
         <p>請避開潮濕紙張與過度鋒利的紙角，摺線若已疲乏，請更換紙張再重新開始。</p>
         <ul class="material-list">
@@ -333,7 +333,7 @@ export function renderAbout() {
         </ul>
       </article>
       <article class="paper-panel">
-        <p class="annotation-label">Archive</p>
+        <p class="annotation-label">典藏說明</p>
         <h2>內容授權與使用說明</h2>
         <p>紙翼圖鑑首版專注於靜態教學體驗，所有圖說都以受控 SVG 線稿與內建資料生成，不載入外部素材。</p>
         <p>如果你想把今天喜歡的摺法留到下次，只要收藏機型，之後就能從圖鑑快速回到它的教學頁。</p>
@@ -346,16 +346,18 @@ export function renderApp({ route, planes, theme, favorites }) {
   const safeRoute = route ?? { page: 'home' };
   const safePlanes = Array.isArray(planes) ? planes : [];
   const favoriteSet = toFavoriteSet(favorites);
-  const currentPlane = safeRoute.page === 'plane'
+  const requestedPlane = safeRoute.page === 'plane'
     ? safePlanes.find(plane => plane.id === safeRoute.id)
     : null;
-  const fallbackToCatalog = safeRoute.page === 'plane' && !currentPlane;
+  const fallbackToCatalog = safeRoute.page === 'plane' && !requestedPlane;
+  const effectiveRoute = fallbackToCatalog ? { page: 'catalog' } : safeRoute;
+  const currentPlane = effectiveRoute.page === 'plane' ? requestedPlane : null;
 
   let title = '紙翼圖鑑｜Paper Flight Atlas';
   let description = '在日式侘寂紙工坊中翻閱八種紙飛機標本卡，逐步完成自己的紙翼。';
   let content = renderHome({ planes: safePlanes, favorites: favoriteSet });
 
-  if (safeRoute.page === 'catalog' || fallbackToCatalog) {
+  if (effectiveRoute.page === 'catalog') {
     title = fallbackToCatalog ? '找不到機型｜紙翼圖鑑' : '機型圖鑑｜紙翼圖鑑';
     description = fallbackToCatalog
       ? '找不到指定機型，已回到紙翼圖鑑繼續挑選。'
@@ -366,7 +368,7 @@ export function renderApp({ route, planes, theme, favorites }) {
     `;
   }
 
-  if (safeRoute.page === 'about') {
+  if (effectiveRoute.page === 'about') {
     title = '關於紙翼圖鑑';
     description = '了解紙材、安全提示與紙翼圖鑑的內容使用方式。';
     content = renderAbout();
@@ -389,13 +391,13 @@ export function renderApp({ route, planes, theme, favorites }) {
     title,
     description,
     html: `
-      <div class="app-shell" data-theme="${escapeHtml(theme ?? 'forest')}" data-page="${escapeHtml(safeRoute.page ?? 'home')}">
-        ${renderSiteHeader(safeRoute, theme ?? 'forest', currentPlane?.id)}
+      <div class="app-shell" data-theme="${escapeHtml(theme ?? 'forest')}" data-page="${escapeHtml(effectiveRoute.page ?? 'home')}">
+        ${renderSiteHeader(effectiveRoute, theme ?? 'forest', currentPlane?.id)}
         <main class="site-main">
           ${content}
         </main>
         <footer class="site-footer paper-panel">
-          <p class="annotation-label">Quiet fold notes</p>
+          <p class="annotation-label">靜折手記</p>
           <p>八種機型、四個難度，讓每次練習都像回到紙工坊整理標本卡。</p>
         </footer>
       </div>

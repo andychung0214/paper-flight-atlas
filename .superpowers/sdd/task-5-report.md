@@ -118,3 +118,116 @@ git diff --check
 - 圖鑑難度篩選按鈕目前只完成 render 結構，實際互動仍待 Task 6 事件繫結。
 - `renderApp().title` 與 `description` 是提供後續以文字方式寫入文件標題與 Meta 的值，因此未做 HTML 插入用途的轉義。
 
+---
+
+## Reviewer findings 修正追加（2026-07-16）
+
+### 本次變更
+
+- 補上 `tests/render.test.mjs` 的 reviewer regression 測試：
+  - `renderCatalog` 的 section label 必須為繁體中文
+  - `renderAbout` 與 app footer 的 section label 必須為繁體中文
+  - `renderApp` 在未知機型 id 時，必須先把有效 route 正規化為 `catalog`
+- 最小修改 `src/render.js`：
+  - 將 `Paper specimen cards`、`Workshop notes`、`Archive`、`Quiet fold notes` 改為繁體中文
+  - 在 `renderApp()` 中把未知機型 route 先轉成有效的 catalog route，再推導 `data-page`、theme `data-hash`、header 狀態與內容
+  - 保留既有「找不到指定機型」提示訊息
+
+## Reviewer TDD RED
+
+### 1. 先新增失敗測試
+
+新增測試名稱：
+
+- `renderCatalog uses Traditional Chinese section labels`
+- `renderAbout and app footer use Traditional Chinese section labels`
+- `renderApp normalizes missing plane routes to catalog state`
+
+### 2. 執行聚焦紅燈測試
+
+執行：
+
+```bash
+node --test --test-name-pattern="Traditional Chinese|normalizes missing plane routes|renderAbout and app footer" tests/render.test.mjs
+```
+
+結果：FAIL（符合預期）
+
+關鍵失敗證據：
+
+```text
+not ok 4 - renderCatalog uses Traditional Chinese section labels
+The input did not match the regular expression /紙樣標本卡/
+<p class="annotation-label">Paper specimen cards</p>
+```
+
+```text
+not ok - renderApp normalizes missing plane routes to catalog state
+<div class="app-shell" data-theme="forest" data-page="plane">
+data-hash="#plane/missing-plane/step/2"
+```
+
+## Reviewer TDD GREEN
+
+### 3. 實作最小修正
+
+- `renderCatalog()`：改為 `紙樣標本卡`
+- `renderAbout()`：改為 `工坊筆記`、`典藏說明`
+- `renderApp()` footer：改為 `靜折手記`
+- `renderApp()`：新增 `effectiveRoute`，未知機型時先回退成 `{ page: 'catalog' }`
+
+### 4. 執行聚焦綠燈測試
+
+執行：
+
+```bash
+node --test --test-name-pattern="Traditional Chinese|normalizes missing plane routes|renderAbout and app footer" tests/render.test.mjs
+```
+
+結果：PASS
+
+關鍵輸出：
+
+```text
+1..9
+# pass 3
+# fail 0
+```
+
+## 追加驗證
+
+### 5. 執行完整 render 測試
+
+執行：
+
+```bash
+node --test tests/render.test.mjs
+```
+
+結果：PASS
+
+關鍵輸出：
+
+```text
+1..9
+# pass 9
+# fail 0
+```
+
+### 6. 執行完整 npm test
+
+執行：
+
+```bash
+npm test
+```
+
+結果：PASS
+
+關鍵輸出：
+
+```text
+1..22
+# pass 22
+# fail 0
+```
