@@ -431,9 +431,7 @@ Run: `npm test -- --test-name-pattern="delivery documents"`
 
 Expected: PASS with 1 matching test and 0 failures.
 
-Run: `rg -n "待補|未解" README.md docs CONTRIBUTING.md`
-
-Expected: no matching lines; separately compare Chinese output with the workspace terminology table.
+執行文件未完成標記掃描，並排除測試指令本身；預期無命中，再將中文輸出與工作區名詞翻譯規範逐項比對。
 
 - [ ] **Step 5: Commit**
 

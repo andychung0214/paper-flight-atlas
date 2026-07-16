@@ -63,7 +63,7 @@
 
 - `npm test` 全數通過。
 - `npm test -- --test-name-pattern="delivery documents"` 通過，確認交付文件完整。
-- 文件占位或未解註記掃描無結果。
+- 文件未完成標記掃描無結果。
 - README 清楚說明遊戲介紹、特色、操作方式、安裝與執行、專案結構、測試、GitHub Pages、已知限制與授權。
 - `docs/ART-DIRECTION.md`、`docs/TEST-PLAN.md`、`CONTRIBUTING.md` 與 `LICENSE` 均完整存在且內容正確。
-- `sitemap.xml` 與 `robots.txt` 可直接部署至 GitHub Pages 使用。
+- `sitemap.xml` 與 `robots.txt` 提供可替換的絕對網址範例；正式上線前替換為實際 GitHub Pages 網址後即可使用。

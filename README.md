@@ -114,7 +114,7 @@ npm test
 
 ## GitHub Pages
 
-本專案可直接以儲存庫根目錄部署到 GitHub Pages，沒有額外建構步驟。
+本專案可在替換部署網址後，以儲存庫根目錄部署到 GitHub Pages，沒有額外建構步驟。
 
 建議流程：
 
@@ -125,6 +125,7 @@ npm test
 
 ## 已知限制
 
+- `sitemap.xml` 與 `robots.txt` 目前使用 `your-github-username.github.io` 作為可替換範例；正式上線前必須換成實際 GitHub Pages 網址。
 - 使用雜湊路由，因此搜尋引擎只會索引單一入口頁，不會把 `#home`、`#catalog` 或各教學步驟視為獨立 URL。
 - 目前沒有後端服務，收藏與主題只會儲存在使用者本機快取。
 - SVG 示意圖為受控教學圖，不是實際摺紙照片或逐幀動畫。

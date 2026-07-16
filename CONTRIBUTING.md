@@ -33,11 +33,9 @@ fix: 修正未知機型路由回到圖鑑
 npm test -- --test-name-pattern="delivery documents"
 ```
 
-- 若修改 README、`docs/` 或 `CONTRIBUTING.md`，請再執行：
+- 若修改 README、`docs/` 或 `CONTRIBUTING.md`，請再執行文件未完成標記掃描，並確認掃描指令本身不在掃描範圍內：
 
-```bash
-rg -n "待補|未解" README.md docs CONTRIBUTING.md
-```
+預期結果為無命中。
 
 ## 文件同步
 
