@@ -12,10 +12,10 @@
 | 項目 | 前置條件 | 操作 | 預期結果 |
 | --- | --- | --- | --- |
 | 自動測試總檢查 | 已安裝 Node.js | 執行 `npm test` | 全部測試通過，0 failures |
-| 交付文件檢查 | 專案根目錄存在 | 執行 `npm test -- --test-name-pattern="delivery documents"` | `README.md`、`docs/*`、`sitemap.xml`、`robots.txt`、`LICENSE` 均存在且內容符合要求 |
-| 機型資料檢查 | 測試環境可執行 Node.js | 執行 `npm test -- --test-name-pattern="catalog contains|every plane|lookup returns"` | 確認 8 種機型、4 個難度與完整步驟資料 |
-| 路由與快取檢查 | 測試環境可執行 Node.js | 執行 `npm test -- --test-name-pattern="hash|theme|favorite|storage"` | 雜湊路由解析正確，收藏與主題快取可安全讀寫 |
-| SVG 與畫面檢查 | 測試環境可執行 Node.js | 執行 `npm test -- --test-name-pattern="accessible SVG|render"` | SVG 安全輸出，畫面與文案符合需求 |
+| 交付文件檢查 | 專案根目錄存在 | 執行 `npm run test:delivery` | `README.md`、`docs/*`、`sitemap.xml`、`robots.txt`、`LICENSE` 均存在且內容符合要求 |
+| 機型資料檢查 | 測試環境可執行 Node.js | 執行 `node --test --test-name-pattern="catalog contains|every plane|lookup returns" tests` | 確認 8 種機型、4 個難度與完整步驟資料 |
+| 路由與快取檢查 | 測試環境可執行 Node.js | 執行 `node --test --test-name-pattern="hash|theme|favorite|storage" tests` | 雜湊路由解析正確，收藏與主題快取可安全讀寫 |
+| SVG 與畫面檢查 | 測試環境可執行 Node.js | 執行 `node --test --test-name-pattern="accessible SVG|render" tests` | SVG 安全輸出，畫面與文案符合需求 |
 
 ## 手動測試清單
 

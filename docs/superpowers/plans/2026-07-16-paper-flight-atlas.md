@@ -407,7 +407,7 @@ git commit -m "feat: 完成紙翼圖鑑互動介面"
 
 - [ ] **Step 2: 執行紅燈測試**
 
-Run: `npm test -- --test-name-pattern="delivery documents"`
+Run: `npm run test:delivery`
 
 Expected: FAIL because the documentation files are missing.
 
@@ -427,7 +427,7 @@ Expected: FAIL because the documentation files are missing.
 
 - [ ] **Step 4: 執行文件測試與名詞掃描**
 
-Run: `npm test -- --test-name-pattern="delivery documents"`
+Run: `npm run test:delivery`
 
 Expected: PASS with 1 matching test and 0 failures.
 

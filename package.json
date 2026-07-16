@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests",
+    "test:delivery": "node --test --test-name-pattern=\"delivery documents\" tests",
     "serve": "python -m http.server 4173"
   }
 }

@@ -62,7 +62,7 @@
 ## 驗收條件
 
 - `npm test` 全數通過。
-- `npm test -- --test-name-pattern="delivery documents"` 通過，確認交付文件完整。
+- `npm run test:delivery` 通過，確認交付文件完整。
 - 文件未完成標記掃描無結果。
 - README 清楚說明遊戲介紹、特色、操作方式、安裝與執行、專案結構、測試、GitHub Pages、已知限制與授權。
 - `docs/ART-DIRECTION.md`、`docs/TEST-PLAN.md`、`CONTRIBUTING.md` 與 `LICENSE` 均完整存在且內容正確。

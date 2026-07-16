@@ -30,7 +30,7 @@ fix: 修正未知機型路由回到圖鑑
 - 變更交付文件、授權、SEO 檔案時，至少再執行：
 
 ```bash
-npm test -- --test-name-pattern="delivery documents"
+npm run test:delivery
 ```
 
 - 若修改 README、`docs/` 或 `CONTRIBUTING.md`，請再執行文件未完成標記掃描，並確認掃描指令本身不在掃描範圍內：
