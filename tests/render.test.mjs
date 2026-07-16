@@ -80,12 +80,31 @@ test('renderGuide renders the current step, progress, and trusted SVG', () => {
   assert.match(html, /data-action="step"/);
 });
 
+test('renderGuide includes an accessible dialog for zooming the current SVG', () => {
+  const plane = planes[0];
+  const html = renderGuide({
+    plane,
+    stepIndex: 1,
+    favorites: [],
+  });
+
+  assert.match(html, /data-action="open-diagram"/);
+  assert.match(html, /aria-haspopup="dialog"/);
+  assert.match(html, /aria-controls="diagram-dialog-classic-dart-1"/);
+  assert.match(html, /<dialog[^>]+id="diagram-dialog-classic-dart-1"/);
+  assert.match(html, /aria-label="Classic Dart 第 2 步放大示意圖"/);
+  assert.match(html, /data-action="close-diagram"/);
+  assert.equal((html.match(/<svg\b/g) ?? []).length, 2);
+});
+
 test('renderAbout includes paper safety guidance', () => {
   const html = renderAbout();
 
   assert.match(html, /紙材安全提示/);
   assert.match(html, /請避開潮濕紙張與過度鋒利的紙角/);
   assert.match(html, /內容授權與使用說明/);
+  assert.match(html, /MIT License/);
+  assert.match(html, /href="\.\/LICENSE"/);
 });
 
 test('renderAbout and app footer use Traditional Chinese section labels', () => {

@@ -25,46 +25,74 @@ function parseStep(value) {
   return 0;
 }
 
-export function parseHash(hash) {
+export function resolveHash(hash) {
   const normalized = normalizeHash(hash);
 
   if (!normalized) {
-    return { page: 'home' };
+    return {
+      route: { page: 'home' },
+      recoveryHash: null,
+    };
   }
 
   const parts = normalized.split('/');
 
   if (parts.length === 1) {
     if (parts[0] === 'home') {
-      return { page: 'home' };
+      return {
+        route: { page: 'home' },
+        recoveryHash: null,
+      };
     }
 
     if (parts[0] === 'catalog') {
-      return { page: 'catalog' };
+      return {
+        route: { page: 'catalog' },
+        recoveryHash: null,
+      };
     }
 
     if (parts[0] === 'about') {
-      return { page: 'about' };
+      return {
+        route: { page: 'about' },
+        recoveryHash: null,
+      };
     }
 
-    return { page: 'home' };
+    return {
+      route: { page: 'home' },
+      recoveryHash: HOME_HASH,
+    };
   }
 
   if (parts[0] === 'plane' && parts[2] === 'step' && parts.length === 4) {
     const id = parts[1];
 
     if (!ROUTE_PATTERN.test(id)) {
-      return { page: 'home' };
+      return {
+        route: { page: 'home' },
+        recoveryHash: HOME_HASH,
+      };
     }
 
     return {
-      page: 'plane',
-      id,
-      step: parseStep(parts[3]),
+      route: {
+        page: 'plane',
+        id,
+        step: parseStep(parts[3]),
+      },
+      recoveryHash: null,
     };
   }
 
-  return { page: 'home' };
+  return {
+    route: { page: 'home' },
+    recoveryHash: HOME_HASH,
+  };
+}
+
+export function parseHash(hash) {
+  return resolveHash(hash).route;
 }
 
 export function buildHomeHash() {

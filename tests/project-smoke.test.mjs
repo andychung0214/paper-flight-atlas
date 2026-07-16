@@ -38,6 +38,42 @@ class FakeElement {
     this.textContent = '';
     this.dataset = {};
     this.content = '';
+    this.focused = false;
+  }
+
+  focus() {
+    this.focused = true;
+  }
+}
+
+class FakeDialog extends FakeElement {
+  constructor() {
+    super('diagram-dialog');
+    this.open = false;
+  }
+
+  showModal() {
+    this.open = true;
+  }
+
+  close() {
+    this.open = false;
+  }
+
+  setAttribute(name) {
+    if (name === 'open') {
+      this.open = true;
+    }
+  }
+
+  removeAttribute(name) {
+    if (name === 'open') {
+      this.open = false;
+    }
+  }
+
+  closest(selector) {
+    return selector === '[data-diagram-dialog]' ? this : null;
   }
 }
 
@@ -52,6 +88,7 @@ class FakeDocument {
       ['app', new FakeElement('app')],
       ['live-region', new FakeElement('live-region')],
     ]);
+    this.dialog = new FakeDialog();
     this.meta = new Map();
 
     if (includeMetadata) {
@@ -73,6 +110,10 @@ class FakeDocument {
   }
 
   querySelector(selector) {
+    if (selector === '[data-diagram-dialog]') {
+      return this.dialog;
+    }
+
     return this.meta.get(selector) ?? null;
   }
 
@@ -115,10 +156,15 @@ class FakeActionTarget {
   constructor(dataset, { disabled = false } = {}) {
     this.dataset = dataset;
     this.disabled = disabled;
+    this.focused = false;
   }
 
   closest(selector) {
     return selector === '[data-action]' ? this : null;
+  }
+
+  focus() {
+    this.focused = true;
   }
 }
 
@@ -136,6 +182,29 @@ test('static project shell exposes required entry and SEO files', () => {
   assert.ok(!html.includes('name="twitter:image"'));
   assert.match(html, /application\/ld\+json/);
   assert.match(html, /type="module"\s+src="\.\/src\/main\.js"/);
+});
+
+test('skip link keeps the current route and focuses the main region', async () => {
+  const { mountApp } = await import(new URL('./src/main.js', moduleRoot));
+  const html = readFileSync(resolve(root, 'index.html'), 'utf8');
+  const documentRef = new FakeDocument();
+  const windowRef = new FakeWindow('#catalog');
+  let prevented = false;
+
+  assert.match(html, /<a[^>]+href="#app"[^>]+data-action="skip"/);
+  assert.match(html, /<main[^>]+id="app"[^>]+tabindex="-1"/);
+
+  mountApp(documentRef, windowRef);
+  documentRef.dispatch('click', {
+    target: new FakeActionTarget({ action: 'skip' }),
+    preventDefault() {
+      prevented = true;
+    },
+  });
+
+  assert.equal(prevented, true);
+  assert.equal(windowRef.location.hash, '#catalog');
+  assert.equal(documentRef.getElementById('app').focused, true);
 });
 
 test('delivery documents exist with required Traditional Chinese sections', () => {
@@ -161,6 +230,15 @@ test('delivery documents exist with required Traditional Chinese sections', () =
   for (const section of ['行動裝置', '無障礙']) {
     assert.match(testPlan, new RegExp(section));
   }
+});
+
+test('historical task report clearly distinguishes stale implementation claims', () => {
+  const report = readFileSync(resolve(root, '.superpowers/sdd/task-1-report.md'), 'utf8');
+
+  assert.match(report, /歷史報告（非最終狀態）/);
+  assert.match(report, /dataset\.appRoot/);
+  assert.match(report, /og:locale/);
+  assert.match(report, /目前程式碼與測試/);
 });
 
 test('application modules expose the interactive shell contract', async () => {
@@ -236,7 +314,9 @@ test('mountApp renders from the route, updates metadata, and delegates applicati
   });
 
   assert.equal(storage.dump()['paper-flight-atlas.favorites'], undefined);
+  assert.equal(windowRef.location.hash, '#plane/classic-dart/step/1');
   assert.match(app.innerHTML, /加入收藏/);
+  assert.match(app.innerHTML, /第 2 步 \/ 共 5 步/);
 
   documentRef.dispatch('click', {
     target: new FakeActionTarget({
@@ -279,6 +359,104 @@ test('mountApp renders from the route, updates metadata, and delegates applicati
   assert.match(app.innerHTML, /第 3 步 \/ 共 5 步/);
 });
 
+test('favorite rerenders a filtered catalog in place', async () => {
+  const { mountApp } = await import(new URL('./src/main.js', moduleRoot));
+  const storage = createMemoryStorage();
+  const documentRef = new FakeDocument();
+  const windowRef = new FakeWindow('#catalog', storage);
+
+  mountApp(documentRef, windowRef);
+  documentRef.dispatch('click', {
+    target: new FakeActionTarget({
+      action: 'filter',
+      difficulty: 'master',
+    }),
+    preventDefault() {},
+  });
+  documentRef.dispatch('click', {
+    target: new FakeActionTarget({
+      action: 'favorite',
+      planeId: 'origami-falcon',
+      hash: '#plane/origami-falcon/step/0',
+    }),
+    preventDefault() {},
+  });
+
+  const app = documentRef.getElementById('app');
+
+  assert.equal(windowRef.location.hash, '#catalog');
+  assert.deepEqual(
+    JSON.parse(storage.dump()['paper-flight-atlas.favorites']),
+    ['origami-falcon'],
+  );
+  assert.match(app.innerHTML, /aria-pressed="true"[^>]*>大師/);
+  assert.equal(countMatches(app.innerHTML, /class="plane-card\b/g), 2);
+  assert.match(app.innerHTML, /收藏中/);
+});
+
+test('mountApp replaces an unknown hash with the visible home hash', async () => {
+  const { mountApp } = await import(new URL('./src/main.js', moduleRoot));
+  const documentRef = new FakeDocument();
+  const windowRef = new FakeWindow('#not-a-real-route');
+  const replacements = [];
+
+  windowRef.history = {
+    replaceState(state, title, url) {
+      replacements.push({ state, title, url });
+      windowRef.location.hash = url;
+    },
+  };
+
+  mountApp(documentRef, windowRef);
+
+  assert.equal(windowRef.location.hash, '#home');
+  assert.deepEqual(replacements, [{ state: null, title: '', url: '#home' }]);
+  assert.equal(documentRef.documentElement.dataset.page, 'home');
+});
+
+test('diagram dialog closes by button or cancel and restores opener focus', async () => {
+  const { mountApp } = await import(new URL('./src/main.js', moduleRoot));
+  const documentRef = new FakeDocument();
+  const windowRef = new FakeWindow('#plane/classic-dart/step/2');
+  const closeTarget = new FakeActionTarget({ action: 'close-diagram' });
+  const buttonOpener = new FakeActionTarget({ action: 'open-diagram' });
+
+  mountApp(documentRef, windowRef);
+  documentRef.dispatch('click', {
+    target: buttonOpener,
+    preventDefault() {},
+  });
+
+  assert.equal(documentRef.dialog.open, true);
+
+  documentRef.dispatch('click', {
+    target: closeTarget,
+    preventDefault() {},
+  });
+
+  assert.equal(documentRef.dialog.open, false);
+  assert.equal(buttonOpener.focused, true);
+
+  const escapeOpener = new FakeActionTarget({ action: 'open-diagram' });
+  let cancelPrevented = false;
+
+  documentRef.dispatch('click', {
+    target: escapeOpener,
+    preventDefault() {},
+  });
+  documentRef.dispatch('cancel', {
+    target: documentRef.dialog,
+    preventDefault() {
+      cancelPrevented = true;
+    },
+  });
+
+  assert.equal(cancelPrevented, true);
+  assert.equal(documentRef.dialog.open, false);
+  assert.equal(escapeOpener.focused, true);
+  assert.equal(windowRef.location.hash, '#plane/classic-dart/step/2');
+});
+
 test('mountApp tolerates missing metadata elements and still renders fallback content', async () => {
   const { mountApp } = await import(new URL('./src/main.js', moduleRoot));
   const documentRef = new FakeDocument({ includeMetadata: false });
@@ -288,4 +466,40 @@ test('mountApp tolerates missing metadata elements and still renders fallback co
   assert.match(documentRef.title, /紙翼圖鑑/);
   assert.match(documentRef.getElementById('app').innerHTML, /紙翼圖鑑/);
   assert.equal(documentRef.documentElement.dataset.page, 'home');
+});
+
+test('mountApp keeps preferences operable when the localStorage getter throws', async () => {
+  const { mountApp } = await import(new URL('./src/main.js', moduleRoot));
+  const documentRef = new FakeDocument();
+  const windowRef = new FakeWindow('#home');
+
+  Object.defineProperty(windowRef, 'localStorage', {
+    configurable: true,
+    get() {
+      throw new Error('localStorage blocked');
+    },
+  });
+
+  assert.doesNotThrow(() => mountApp(documentRef, windowRef));
+
+  const app = documentRef.getElementById('app');
+
+  documentRef.dispatch('click', {
+    target: new FakeActionTarget({
+      action: 'theme',
+      theme: 'wine',
+    }),
+    preventDefault() {},
+  });
+  documentRef.dispatch('click', {
+    target: new FakeActionTarget({
+      action: 'favorite',
+      planeId: 'classic-dart',
+    }),
+    preventDefault() {},
+  });
+
+  assert.equal(documentRef.documentElement.dataset.theme, 'wine');
+  assert.match(app.innerHTML, /data-theme="wine"/);
+  assert.match(app.innerHTML, /已收藏 1 張機型/);
 });

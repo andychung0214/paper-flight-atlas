@@ -32,7 +32,7 @@ test('toggles favorites repeatedly and keeps a stable favorite list', () => {
   assert.equal(preferences.isFavorite('sky-arrow'), false);
 });
 
-test('falls back to defaults when storage throws', () => {
+test('keeps in-memory preferences operable when storage access throws', () => {
   const preferences = createPreferenceStore({
     getItem() {
       throw new Error('storage unavailable');
@@ -48,6 +48,34 @@ test('falls back to defaults when storage throws', () => {
   assert.equal(preferences.getTheme(), 'forest');
   assert.deepEqual(preferences.getFavorites(), []);
   assert.equal(preferences.isFavorite('sky-arrow'), false);
-  assert.equal(preferences.setTheme('wine'), 'forest');
-  assert.deepEqual(preferences.toggleFavorite('sky-arrow'), []);
+  assert.equal(preferences.setTheme('wine'), 'wine');
+  assert.equal(preferences.getTheme(), 'wine');
+  assert.deepEqual(preferences.toggleFavorite('sky-arrow'), ['sky-arrow']);
+  assert.deepEqual(preferences.getFavorites(), ['sky-arrow']);
+  assert.equal(preferences.isFavorite('sky-arrow'), true);
+});
+
+test('preserves loaded preferences in memory when persistence writes fail', () => {
+  const persisted = {
+    'paper-flight-atlas.theme': 'wine',
+    'paper-flight-atlas.favorites': JSON.stringify(['classic-dart']),
+  };
+  const preferences = createPreferenceStore({
+    getItem(key) {
+      return persisted[key] ?? null;
+    },
+    setItem() {
+      throw new Error('storage unavailable');
+    },
+    removeItem() {
+      throw new Error('storage unavailable');
+    },
+  });
+
+  assert.equal(preferences.getTheme(), 'wine');
+  assert.deepEqual(preferences.getFavorites(), ['classic-dart']);
+  assert.equal(preferences.setTheme('london'), 'london');
+  assert.equal(preferences.getTheme(), 'london');
+  assert.deepEqual(preferences.toggleFavorite('classic-dart'), []);
+  assert.deepEqual(preferences.getFavorites(), []);
 });

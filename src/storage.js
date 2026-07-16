@@ -60,31 +60,35 @@ function writeFavorites(storage, favorites) {
 }
 
 export function createPreferenceStore(storage) {
+  let theme = normalizeTheme(getStorageValue(storage, THEME_KEY));
+  let favorites = readFavorites(storage);
+
   return {
     getTheme() {
-      return normalizeTheme(getStorageValue(storage, THEME_KEY));
+      return theme;
     },
 
-    setTheme(theme) {
-      const nextTheme = normalizeTheme(theme);
-      return setStorageValue(storage, THEME_KEY, nextTheme) ? nextTheme : 'forest';
+    setTheme(nextTheme) {
+      theme = normalizeTheme(nextTheme);
+      setStorageValue(storage, THEME_KEY, theme);
+      return theme;
     },
 
     getFavorites() {
-      return readFavorites(storage);
+      return [...favorites];
     },
 
     isFavorite(id) {
-      return readFavorites(storage).includes(id);
+      return favorites.includes(id);
     },
 
     toggleFavorite(id) {
-      const favorites = readFavorites(storage);
-      const nextFavorites = favorites.includes(id)
+      favorites = favorites.includes(id)
         ? favorites.filter(item => item !== id)
         : [...favorites, id];
 
-      return writeFavorites(storage, nextFavorites) ? nextFavorites : [];
+      writeFavorites(storage, favorites);
+      return [...favorites];
     },
   };
 }

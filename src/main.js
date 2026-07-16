@@ -1,6 +1,6 @@
 import { planes } from './data/planes.js';
 import { renderApp } from './render.js';
-import { parseHash } from './router.js';
+import { buildCatalogHash, resolveHash } from './router.js';
 import { createPreferenceStore } from './storage.js';
 
 const THEME_COLORS = Object.freeze({
@@ -17,6 +17,48 @@ const DIFFICULTY_LABELS = Object.freeze({
 });
 
 const mountStates = new WeakMap();
+
+function getLocalStorage(windowRef) {
+  try {
+    return windowRef?.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+function replaceLocationHash(windowRef, hash) {
+  if (!hash) {
+    return;
+  }
+
+  try {
+    if (windowRef?.location?.hash === hash) {
+      return;
+    }
+
+    if (typeof windowRef?.history?.replaceState === 'function') {
+      windowRef.history.replaceState(null, '', hash);
+
+      if (windowRef.location?.hash !== hash) {
+        windowRef.location.hash = hash;
+      }
+
+      return;
+    }
+
+    if (windowRef?.location) {
+      windowRef.location.hash = hash;
+    }
+  } catch {
+    try {
+      if (windowRef?.location) {
+        windowRef.location.hash = hash;
+      }
+    } catch {
+      // 即使無法替換網址，已產生的備援內容仍可操作。
+    }
+  }
+}
 
 function setMetaContent(documentRef, selector, value) {
   const node = documentRef?.querySelector?.(selector);
@@ -56,7 +98,7 @@ function getState(documentRef, windowRef) {
 
   const nextState = {
     activeDifficulty: null,
-    preferences: createPreferenceStore(windowRef?.localStorage),
+    preferences: createPreferenceStore(getLocalStorage(windowRef)),
   };
 
   mountStates.set(documentRef, nextState);
@@ -70,7 +112,7 @@ function renderCurrentRoute(documentRef, windowRef, state, announcement) {
     return;
   }
 
-  const route = parseHash(windowRef?.location?.hash);
+  const { route, recoveryHash } = resolveHash(windowRef?.location?.hash);
   const theme = state.preferences.getTheme();
   const favorites = state.preferences.getFavorites();
   const activeDifficulty = route.page === 'catalog' ? state.activeDifficulty : null;
@@ -81,6 +123,11 @@ function renderCurrentRoute(documentRef, windowRef, state, announcement) {
     favorites,
     activeDifficulty,
   });
+
+  replaceLocationHash(
+    windowRef,
+    recoveryHash ?? (route.page === 'plane' && rendered.page === 'catalog' ? buildCatalogHash() : null),
+  );
 
   appRoot.innerHTML = rendered.html;
 
@@ -107,6 +154,48 @@ function navigateToHash(windowRef, hash, rerender) {
   windowRef.location.hash = hash;
 }
 
+function openDiagramDialog(documentRef, state, opener) {
+  const dialog = documentRef.querySelector?.('[data-diagram-dialog]');
+
+  if (!dialog) {
+    return;
+  }
+
+  state.dialogOpener = opener;
+
+  try {
+    if (typeof dialog.showModal === 'function') {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      dialog.setAttribute?.('open', '');
+    }
+  } catch {
+    dialog.setAttribute?.('open', '');
+  }
+}
+
+function closeDiagramDialog(dialog, state) {
+  if (!dialog) {
+    return;
+  }
+
+  try {
+    if (typeof dialog.close === 'function' && dialog.open) {
+      dialog.close();
+    } else {
+      dialog.removeAttribute?.('open');
+    }
+  } catch {
+    dialog.removeAttribute?.('open');
+  }
+
+  const opener = state.dialogOpener;
+  state.dialogOpener = null;
+  opener?.focus?.();
+}
+
 function bindInteractions(documentRef, windowRef, state) {
   const rerender = message => renderCurrentRoute(documentRef, windowRef, state, message);
 
@@ -120,6 +209,21 @@ function bindInteractions(documentRef, windowRef, state) {
     event.preventDefault?.();
 
     switch (actionTarget.dataset.action) {
+      case 'skip': {
+        documentRef.getElementById?.('app')?.focus?.();
+        return;
+      }
+
+      case 'open-diagram': {
+        openDiagramDialog(documentRef, state, actionTarget);
+        return;
+      }
+
+      case 'close-diagram': {
+        closeDiagramDialog(documentRef.querySelector?.('[data-diagram-dialog]'), state);
+        return;
+      }
+
       case 'navigate':
       case 'step': {
         if (actionTarget.dataset.hash !== '#catalog') {
@@ -135,7 +239,7 @@ function bindInteractions(documentRef, windowRef, state) {
           state.preferences.toggleFavorite(actionTarget.dataset.planeId);
         }
 
-        navigateToHash(windowRef, actionTarget.dataset.hash, rerender);
+        rerender();
         return;
       }
 
@@ -161,6 +265,17 @@ function bindInteractions(documentRef, windowRef, state) {
         break;
     }
   });
+
+  documentRef.addEventListener('cancel', event => {
+    const dialog = event.target?.closest?.('[data-diagram-dialog]');
+
+    if (!dialog) {
+      return;
+    }
+
+    event.preventDefault?.();
+    closeDiagramDialog(dialog, state);
+  }, true);
 
   windowRef.addEventListener('hashchange', () => {
     rerender();

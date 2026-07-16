@@ -271,6 +271,8 @@ export function renderGuide({ plane, stepIndex, favorites }) {
   const previousStep = Math.max(safeStepIndex - 1, 0);
   const nextStep = Math.min(safeStepIndex + 1, plane.steps.length - 1);
   const guideHash = buildPlaneHash(plane.id, safeStepIndex);
+  const dialogId = `diagram-dialog-${plane.id}-${safeStepIndex}`;
+  const diagramLabel = `${plane.name} 第 ${safeStepIndex + 1} 步放大示意圖`;
   const svg = renderFoldDiagram(
     step.diagram,
     `${plane.name} 第 ${safeStepIndex + 1} 步 ${step.title}`,
@@ -289,7 +291,30 @@ export function renderGuide({ plane, stepIndex, favorites }) {
         <p class="step-status" aria-live="polite">第 ${safeStepIndex + 1} 步 / 共 ${plane.steps.length} 步</p>
         <div class="diagram-frame" aria-label="摺紙示意圖">
           ${svg}
+          <button
+            type="button"
+            class="button button--ghost diagram-frame__zoom"
+            data-action="open-diagram"
+            aria-haspopup="dialog"
+            aria-controls="${escapeHtml(dialogId)}"
+          >放大示意圖</button>
         </div>
+        <dialog
+          id="${escapeHtml(dialogId)}"
+          class="diagram-dialog"
+          data-diagram-dialog
+          aria-label="${escapeHtml(diagramLabel)}"
+        >
+          <div class="diagram-dialog__surface">
+            <div class="diagram-dialog__header">
+              <p class="annotation-label">${escapeHtml(diagramLabel)}</p>
+              <button type="button" class="button button--ghost" data-action="close-diagram">關閉放大圖</button>
+            </div>
+            <div class="diagram-dialog__canvas">
+              ${svg}
+            </div>
+          </div>
+        </dialog>
       </div>
       <aside class="guide-layout__notes paper-panel">
         <p class="annotation-label">步驟標題</p>
@@ -346,6 +371,7 @@ export function renderAbout() {
         <h2>內容授權與使用說明</h2>
         <p>紙翼圖鑑首版專注於靜態教學體驗，所有圖說都以受控 SVG 線稿與內建資料生成，不載入外部素材。</p>
         <p>如果你想把今天喜歡的摺法留到下次，只要收藏機型，之後就能從圖鑑快速回到它的教學頁。</p>
+        <p>本專案程式碼依 <a href="./LICENSE">MIT License</a> 授權，完整條款請參閱授權檔案。</p>
       </article>
     </section>
   `;

@@ -83,6 +83,7 @@ test('mountApp writes the normalized catalog page for a missing plane route', ()
 
   mountApp(documentRef, windowRef);
 
+  assert.equal(windowRef.location.hash, '#catalog');
   assert.equal(documentRef.documentElement.dataset.page, 'catalog');
   assert.match(documentRef.getElementById('app').innerHTML, /data-page="catalog"/);
 });
