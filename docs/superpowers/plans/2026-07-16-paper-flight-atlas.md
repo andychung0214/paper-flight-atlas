@@ -431,7 +431,7 @@ Run: `npm test -- --test-name-pattern="delivery documents"`
 
 Expected: PASS with 1 matching test and 0 failures.
 
-Run: `rg -n "FIXME|UNRESOLVED" README.md docs CONTRIBUTING.md`
+Run: `rg -n "待補|未解" README.md docs CONTRIBUTING.md`
 
 Expected: no matching lines; separately compare Chinese output with the workspace terminology table.
 

@@ -138,9 +138,28 @@ test('static project shell exposes required entry and SEO files', () => {
   assert.match(html, /type="module"\s+src="\.\/src\/main\.js"/);
 });
 
-test('task 6 shell does not ship task 7 crawl files yet', () => {
-  for (const file of ['sitemap.xml', 'robots.txt']) {
-    assert.equal(existsSync(resolve(root, file)), false, `${file} should not exist until Task 7`);
+test('delivery documents exist with required Traditional Chinese sections', () => {
+  for (const file of [
+    'sitemap.xml',
+    'robots.txt',
+    'README.md',
+    'docs/PLAN.md',
+    'docs/ART-DIRECTION.md',
+    'docs/TEST-PLAN.md',
+    'CONTRIBUTING.md',
+    'LICENSE',
+  ]) {
+    assert.equal(existsSync(resolve(root, file)), true, `${file} should exist`);
+  }
+
+  const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
+  for (const section of ['遊戲介紹', '操作方式', 'GitHub Pages', '已知限制', '授權']) {
+    assert.match(readme, new RegExp(section));
+  }
+
+  const testPlan = readFileSync(resolve(root, 'docs/TEST-PLAN.md'), 'utf8');
+  for (const section of ['行動裝置', '無障礙']) {
+    assert.match(testPlan, new RegExp(section));
   }
 });
 
