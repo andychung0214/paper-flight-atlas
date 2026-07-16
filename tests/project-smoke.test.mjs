@@ -7,12 +7,13 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('static project shell exposes required entry and SEO files', () => {
-  for (const file of ['index.html', 'styles.css', 'package.json']) {
+  for (const file of ['index.html', 'styles.css', 'package.json', 'og-image.svg']) {
     assert.equal(existsSync(resolve(root, file)), true, `${file} should exist`);
   }
 
   const html = readFileSync(resolve(root, 'index.html'), 'utf8');
   assert.match(html, /<main[^>]+id="app"/);
   assert.match(html, /property="og:title"/);
+  assert.ok(html.includes('property="og:image" content="./og-image.svg"'));
   assert.match(html, /application\/ld\+json/);
 });

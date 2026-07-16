@@ -89,3 +89,51 @@ npm test
 
 - `canonical`、Open Graph、Product JSON-LD 先使用本機佔位網址，符合靜態入口階段需求。
 - `src/main.js` 僅做最小初始化，避免增加不必要行為。
+
+## 2026-07-16 修正記錄：Open Graph 圖像改為本機靜態資產
+
+### 問題
+
+原本的 `index.html` 將 `og:image` 指向不存在的外部圖片路徑，會造成靜態專案無法自給自足，也無法通過針對性 smoke 檢查。
+
+### 修正內容
+
+- 新增 `og-image.svg` 於儲存庫根目錄。
+- 將 `index.html` 的 `og:image` 改為 `./og-image.svg`。
+- 擴充 `tests/project-smoke.test.mjs`，同時驗證：
+  - `og-image.svg` 檔案存在
+  - `index.html` 的 Open Graph 圖像 metadata 指向 `./og-image.svg`
+
+### 測試過程
+
+#### RED
+
+先執行聚焦測試：
+
+```bash
+npm test -- --test-name-pattern="static project shell exposes required entry and SEO files"
+```
+
+結果：失敗，錯誤指出 `og-image.svg should exist`。
+
+#### GREEN
+
+補上本機 SVG 與 metadata 後重新執行相同測試：
+
+```bash
+npm test -- --test-name-pattern="static project shell exposes required entry and SEO files"
+```
+
+結果：通過，1 個測試、0 個失敗。
+
+接著執行完整測試：
+
+```bash
+npm test
+```
+
+結果：通過，1 個測試、0 個失敗。
+
+### 結果
+
+Open Graph 圖像已改為可由靜態專案直接提供的本機資產，且 smoke 檢查已覆蓋資產存在性與 metadata 指向。
