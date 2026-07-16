@@ -120,12 +120,12 @@ npm test
 
 1. 將專案推送到 GitHub 儲存庫。
 2. 在 GitHub Pages 設定中選擇從預設分支的根目錄部署。
-3. 依實際部署網址更新 `index.html` 內的 canonical／Open Graph URL，以及 `sitemap.xml`、`robots.txt` 中的網站位址。
+3. 依實際部署網址更新 `index.html` 內的 canonical、Open Graph URL 與 Product JSON-LD 的 `offers.url`，以及 `sitemap.xml`、`robots.txt` 中的網站位址。
 4. 部署完成後檢查首頁、`sitemap.xml` 與 `robots.txt` 是否都能回應 HTTP 200。
 
 ## 已知限制
 
-- `sitemap.xml` 與 `robots.txt` 目前使用 `your-github-username.github.io` 作為可替換範例；正式上線前必須換成實際 GitHub Pages 網址。
+- `index.html`、`sitemap.xml` 與 `robots.txt` 目前使用可替換的範例網址；正式上線前必須換成實際 GitHub Pages 網址。
 - 使用雜湊路由，因此搜尋引擎只會索引單一入口頁，不會把 `#home`、`#catalog` 或各教學步驟視為獨立 URL。
 - 目前沒有後端服務，收藏與主題只會儲存在使用者本機快取。
 - SVG 示意圖為受控教學圖，不是實際摺紙照片或逐幀動畫。
