@@ -137,3 +137,64 @@ npm test
 ### 結果
 
 Open Graph 圖像已改為可由靜態專案直接提供的本機資產，且 smoke 檢查已覆蓋資產存在性與 metadata 指向。
+
+## 2026-07-16 修正記錄：移除脆弱的 Open Graph 圖像中繼資料
+
+### 問題
+
+reviewer 指出 `og:image` 使用本機相對 SVG，對真實社群爬蟲不夠穩定，而且缺少 `og:image:alt`。由於這是靜態第一版，最安全的處理方式是直接移除可選的圖像中繼資料，避免分享卡片指向不可靠或不存在的資產。
+
+### 修正內容
+
+- 從 `index.html` 移除 `og:image`。
+- 保留必須的文字型 Open Graph 標記：
+  - `og:title`
+  - `og:description`
+  - `og:type`
+  - `og:url`
+  - `og:locale`
+- 保留 Twitter summary card 中繼資料。
+- 刪除未使用的 `og-image.svg`。
+- 更新 `tests/project-smoke.test.mjs`：
+  - 取消對 `og-image.svg` 存在性的要求
+  - 明確驗證 `og:image`、`og:image:alt`、`twitter:image` 都不存在
+
+### 測試過程
+
+#### RED
+
+先加入聚焦斷言，執行：
+
+```bash
+npm test -- --test-name-pattern="static project shell"
+```
+
+結果：失敗，原因是 `index.html` 仍包含 `property="og:image"`。
+
+摘要：
+
+```text
+assert.ok(!html.includes('property="og:image"'))
+```
+
+#### GREEN
+
+移除 `index.html` 的 `og:image`、刪除 `og-image.svg`，並同步更新 smoke test 後重新執行：
+
+```bash
+npm test -- --test-name-pattern="static project shell"
+```
+
+結果：通過，1 個測試、0 個失敗。
+
+接著執行完整測試：
+
+```bash
+npm test
+```
+
+結果：通過，1 個測試、0 個失敗。
+
+### 結果
+
+現已不再輸出任何 `og:image` 相關中繼資料，分享卡片只保留文字型 Open Graph 與 Twitter summary card 設定，避免指向脆弱或缺失的圖像資產。
