@@ -240,6 +240,15 @@ export function renderCatalog({ planes, favorites, activeDifficulty }) {
   const filteredPlanes = activeDifficulty
     ? planes.filter(plane => plane.difficulty === activeDifficulty)
     : planes;
+  const cards = filteredPlanes.length > 0
+    ? filteredPlanes.map(plane => renderPlaneCard(plane, favorites)).join('')
+    : `
+      <article class="empty-state paper-panel">
+        <p class="annotation-label">暫時留白</p>
+        <h3>目前沒有符合的機型</h3>
+        <p>換一個難度看看，或回到全部機型重新翻閱紙樣標本卡。</p>
+      </article>
+    `;
 
   return `
     <section class="catalog-shell">
@@ -250,7 +259,7 @@ export function renderCatalog({ planes, favorites, activeDifficulty }) {
       </div>
       ${renderDifficultyFilters(planes, activeDifficulty)}
       <div class="catalog-grid">
-        ${filteredPlanes.map(plane => renderPlaneCard(plane, favorites)).join('')}
+        ${cards}
       </div>
     </section>
   `;
@@ -342,7 +351,7 @@ export function renderAbout() {
   `;
 }
 
-export function renderApp({ route, planes, theme, favorites }) {
+export function renderApp({ route, planes, theme, favorites, activeDifficulty }) {
   const safeRoute = route ?? { page: 'home' };
   const safePlanes = Array.isArray(planes) ? planes : [];
   const favoriteSet = toFavoriteSet(favorites);
@@ -358,13 +367,21 @@ export function renderApp({ route, planes, theme, favorites }) {
   let content = renderHome({ planes: safePlanes, favorites: favoriteSet });
 
   if (effectiveRoute.page === 'catalog') {
-    title = fallbackToCatalog ? '找不到機型｜紙翼圖鑑' : '機型圖鑑｜紙翼圖鑑';
+    const activeDifficultyLabel = activeDifficulty ? difficultyLabels[activeDifficulty] : '';
+
+    title = fallbackToCatalog
+      ? '找不到機型｜紙翼圖鑑'
+      : activeDifficultyLabel
+        ? `${activeDifficultyLabel}機型圖鑑｜紙翼圖鑑`
+        : '機型圖鑑｜紙翼圖鑑';
     description = fallbackToCatalog
       ? '找不到指定機型，已回到紙翼圖鑑繼續挑選。'
+      : activeDifficultyLabel
+        ? `聚焦 ${activeDifficultyLabel} 難度的紙飛機紙樣卡，挑一張適合今天節奏的紙翼。`
       : '翻閱八張紙飛機紙樣卡，依難度挑選今日要練習的摺法。';
     content = `
       ${fallbackToCatalog ? '<div class="notice-strip paper-panel" role="status">找不到指定機型，先回到圖鑑挑一張新的紙樣卡吧。</div>' : ''}
-      ${renderCatalog({ planes: safePlanes, favorites: favoriteSet })}
+      ${renderCatalog({ planes: safePlanes, favorites: favoriteSet, activeDifficulty })}
     `;
   }
 

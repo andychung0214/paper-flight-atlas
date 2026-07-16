@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://paper-flight-atlas.local/sitemap.xml

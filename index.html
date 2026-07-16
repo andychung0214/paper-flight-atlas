@@ -5,37 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="紙翼圖鑑是以紙飛機教學與圖鑑為核心的靜態網頁遊戲。"
+      content="紙翼圖鑑是一款結合紙飛機教學、機型圖鑑與靜謐紙工坊視覺的免費網頁遊戲。"
     />
     <meta name="theme-color" content="#3d5a4d" />
     <link rel="canonical" href="https://paper-flight-atlas.local/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="紙翼圖鑑" />
-    <meta property="og:title" content="紙翼圖鑑" />
+    <meta property="og:title" content="紙翼圖鑑｜Paper Flight Atlas" />
     <meta
       property="og:description"
-      content="紙飛機教學圖鑑網頁遊戲，提供靜態入口與基礎 SEO。"
+      content="在靜謐的紙工坊裡翻閱機型標本卡，逐步完成紙飛機摺法、收藏與主題切換。"
     />
     <meta property="og:url" content="https://paper-flight-atlas.local/" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="紙翼圖鑑" />
+    <meta name="twitter:title" content="紙翼圖鑑｜Paper Flight Atlas" />
     <meta
       name="twitter:description"
-      content="紙飛機教學圖鑑網頁遊戲，提供靜態入口與基礎 SEO。"
+      content="在靜謐的紙工坊裡翻閱機型標本卡，逐步完成紙飛機摺法、收藏與主題切換。"
     />
-    <title>紙翼圖鑑</title>
+    <title>紙翼圖鑑｜Paper Flight Atlas</title>
     <link rel="stylesheet" href="./styles.css" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Product",
         "name": "紙翼圖鑑",
-        "description": "紙飛機教學圖鑑網頁遊戲",
+        "description": "紙翼圖鑑是一款結合紙飛機教學、機型圖鑑與靜謐紙工坊視覺的免費網頁遊戲。",
         "brand": {
           "@type": "Brand",
           "name": "紙翼圖鑑"
         },
-        "category": "Game",
+        "category": "紙飛機教學網頁遊戲",
+        "isAccessibleForFree": true,
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -50,8 +51,29 @@
   <body>
     <a class="skip-link" href="#app">跳到主要內容</a>
     <main id="app" data-app-root>
-      <h1>紙翼圖鑑</h1>
-      <p>靜態入口已就緒。</p>
+      <section class="fallback-shell" aria-labelledby="fallback-title">
+        <article class="fallback-shell__hero paper-panel">
+          <p class="annotation-label">Paper Flight Atlas</p>
+          <h1 id="fallback-title">紙翼圖鑑</h1>
+          <p>這是一款以紙飛機教學與機型圖鑑為核心的網頁遊戲，帶你在安靜的紙工坊裡翻閱八種紙翼標本卡，逐步完成摺法、收藏喜歡的機型，並切換森林綠、酒紅色或倫敦藍主題。</p>
+          <p class="fallback-shell__note">啟用 JavaScript 後，即可使用逐步教學、收藏切換、主題切換與路由導覽。</p>
+          <noscript>
+            <p class="fallback-shell__note">目前偵測到 JavaScript 尚未啟用，互動教學暫時無法載入；你仍可先閱讀這份品牌簡介與遊戲說明。</p>
+          </noscript>
+        </article>
+        <section class="fallback-shell__grid" aria-label="紙翼圖鑑簡介">
+          <article class="paper-panel">
+            <p class="annotation-label">遊戲焦點</p>
+            <h2>像翻閱紙樣標本卡一樣學習</h2>
+            <p>每架機型都附有難度、紙材、飛行特性與逐步示意圖，適合從基礎到大師等級慢慢練習。</p>
+          </article>
+          <article class="paper-panel">
+            <p class="annotation-label">互動提示</p>
+            <h2>主題、收藏與步驟都會被記住</h2>
+            <p>啟用 JavaScript 後，圖鑑會記住你的主題偏好與收藏狀態，並用無障礙 live region 提示頁面更新。</p>
+          </article>
+        </section>
+      </section>
     </main>
     <div id="live-region" aria-live="polite" class="sr-only"></div>
   </body>
