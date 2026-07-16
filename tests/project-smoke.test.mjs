@@ -123,7 +123,7 @@ class FakeActionTarget {
 }
 
 test('static project shell exposes required entry and SEO files', () => {
-  for (const file of ['index.html', 'styles.css', 'package.json', 'sitemap.xml', 'robots.txt']) {
+  for (const file of ['index.html', 'styles.css', 'package.json']) {
     assert.equal(existsSync(resolve(root, file)), true, `${file} should exist`);
   }
   assert.equal(existsSync(resolve(root, 'og-image.svg')), false, 'og-image.svg should not exist');
@@ -136,6 +136,12 @@ test('static project shell exposes required entry and SEO files', () => {
   assert.ok(!html.includes('name="twitter:image"'));
   assert.match(html, /application\/ld\+json/);
   assert.match(html, /type="module"\s+src="\.\/src\/main\.js"/);
+});
+
+test('task 6 shell does not ship task 7 crawl files yet', () => {
+  for (const file of ['sitemap.xml', 'robots.txt']) {
+    assert.equal(existsSync(resolve(root, file)), false, `${file} should not exist until Task 7`);
+  }
 });
 
 test('application modules expose the interactive shell contract', async () => {
@@ -262,4 +268,5 @@ test('mountApp tolerates missing metadata elements and still renders fallback co
   assert.doesNotThrow(() => mountApp(documentRef, windowRef));
   assert.match(documentRef.title, /紙翼圖鑑/);
   assert.match(documentRef.getElementById('app').innerHTML, /紙翼圖鑑/);
+  assert.equal(documentRef.documentElement.dataset.page, 'home');
 });

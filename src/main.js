@@ -86,7 +86,7 @@ function renderCurrentRoute(documentRef, windowRef, state, announcement) {
 
   if (documentRef?.documentElement?.dataset) {
     documentRef.documentElement.dataset.theme = theme;
-    documentRef.documentElement.dataset.page = route.page ?? 'home';
+    documentRef.documentElement.dataset.page = rendered.page ?? route.page ?? 'home';
   }
 
   updateMetadata(documentRef, rendered.title, rendered.description, theme);

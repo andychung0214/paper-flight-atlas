@@ -405,14 +405,15 @@ export function renderApp({ route, planes, theme, favorites, activeDifficulty })
   }
 
   return {
+    page: effectiveRoute.page ?? 'home',
     title,
     description,
     html: `
       <div class="app-shell" data-theme="${escapeHtml(theme ?? 'forest')}" data-page="${escapeHtml(effectiveRoute.page ?? 'home')}">
         ${renderSiteHeader(effectiveRoute, theme ?? 'forest', currentPlane?.id)}
-        <main class="site-main">
+        <div class="site-main">
           ${content}
-        </main>
+        </div>
         <footer class="site-footer paper-panel">
           <p class="annotation-label">靜折手記</p>
           <p>八種機型、四個難度，讓每次練習都像回到紙工坊整理標本卡。</p>

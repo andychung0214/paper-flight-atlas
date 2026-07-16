@@ -119,9 +119,11 @@ test('renderApp normalizes missing plane routes to catalog state', () => {
 
   assert.match(rendered.title, /找不到機型｜紙翼圖鑑/);
   assert.match(rendered.description, /找不到指定機型，已回到紙翼圖鑑繼續挑選/);
+  assert.equal(rendered.page, 'catalog');
   assert.match(rendered.html, /data-page="catalog"/);
   assert.match(rendered.html, /找不到指定機型，先回到圖鑑挑一張新的紙樣卡吧/);
   assert.match(rendered.html, /紙樣標本卡/);
+  assert.doesNotMatch(rendered.html, /<main\b/i);
   assert.doesNotMatch(rendered.html, /data-page="plane"/);
   assert.doesNotMatch(rendered.html, /data-hash="#plane\/missing-plane\/step\/2"/);
 });

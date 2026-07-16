@@ -165,3 +165,81 @@ PY
 - catalog 的難度篩選目前是 session 內記憶，不會寫入 `localStorage`；這符合本 task 範圍，也避免擴張既有路由合約。
 - 這次為了滿足靜態伺服器檢查，新增了 `sitemap.xml` 與 `robots.txt`；雖然不在 brief 的檔案清單內，但屬於同一需求的必要支援檔。
 - static-server 驗證採用 Python 行內等效伺服器完成，功能上等同 `python -m http.server 4173` 的檔案回應檢查。
+
+---
+
+## Reviewer follow-up（2026-07-16）
+
+### 修正摘要
+
+- `renderApp` 不再輸出內層 `<main class="site-main">`，改為 `<div class="site-main">`，避免與 `index.html` 既有的 `main#app` 形成巢狀 landmark。
+- `renderApp` 額外回傳正規化後的 `page`，讓 `mountApp` 將 `document.documentElement.dataset.page` 寫成正規化頁面，而不是原始 route。
+- 移除 Task 6 分支中的 `sitemap.xml` 與 `robots.txt`，並把 smoke / 靜態伺服器驗證縮回 Task 6 真正持有的入口與模組檔案。
+
+### RED
+
+#### 聚焦測試指令
+
+```bash
+npm test -- --test-name-pattern="renderApp normalizes missing plane routes to catalog state|task 6 shell does not ship task 7 crawl files yet|mountApp writes the normalized catalog page for a missing plane route"
+```
+
+#### RED 證據
+
+實際輸出為失敗，重點如下：
+
+- `mountApp writes the normalized catalog page for a missing plane route`
+  - `actual: 'plane'`
+  - `expected: 'catalog'`
+- `task 6 shell does not ship task 7 crawl files yet`
+  - `sitemap.xml should not exist until Task 7`
+- `renderApp normalizes missing plane routes to catalog state`
+  - `actual: undefined`
+  - `expected: 'catalog'`
+
+補充：同一輪 RED 中也已把「rendered output 不得再含有內層 `<main>` landmark」寫進 `renderApp` 回歸案例；當時該案例先在 `rendered.page` 斷言處失敗，對照 `src/render.js` 當下實作可確認 HTML 仍輸出 `<main class="site-main">`。
+
+### GREEN
+
+#### 聚焦測試指令
+
+```bash
+npm test -- --test-name-pattern="renderApp normalizes missing plane routes to catalog state|task 6 shell does not ship task 7 crawl files yet|mountApp writes the normalized catalog page for a missing plane route"
+```
+
+#### GREEN 證據
+
+```text
+# tests 27
+# pass 27
+# fail 0
+```
+
+### 完整驗證
+
+#### 全量測試
+
+```bash
+npm test
+```
+
+```text
+# tests 27
+# pass 27
+# fail 0
+```
+
+#### 靜態伺服器檢查（Task 6 範圍）
+
+以 Python 等效啟動 `http.server` 後，確認下列路徑皆回傳 `HTTP 200`：
+
+```text
+/index.html=200
+/styles.css=200
+/src/main.js=200
+/src/render.js=200
+/src/router.js=200
+/src/storage.js=200
+/src/diagrams.js=200
+/src/data/planes.js=200
+```
