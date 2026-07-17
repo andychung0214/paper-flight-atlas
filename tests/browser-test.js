@@ -3,6 +3,18 @@
 
   var namespace = global.PaperFlightAtlas || {};
   var boundary = global.__paperFlightAtlasBrowserBoundary || { errors: [], expectedScriptOrder: [] };
+  var start = null;
+
+  global.addEventListener('message', function (event) {
+    var payload = event && event.data;
+
+    if (payload && payload.type === 'paper-flight-atlas-entry-contract') {
+      boundary.entryContract = payload.contract;
+      if (start) {
+        start();
+      }
+    }
+  });
 
   function createTest(name, run) {
     return { name: name, run: run };
@@ -256,6 +268,7 @@
   }
 
   function testScriptBoundary() {
+    var entryContract = boundary.entryContract;
     var expected = boundary.expectedScriptOrder;
     var scripts = Array.prototype.slice.call(document.querySelectorAll('script[data-app-script]'));
     var actual = scripts.map(function (script) {
@@ -269,6 +282,28 @@
     assert(!document.querySelector('[data-app-root]'), '測試頁不可自動掛載應用程式');
     assert(document.getElementById('test-summary'), '缺少測試摘要');
     assert(document.getElementById('test-results'), '缺少測試結果區');
+
+    assert(entryContract, '尚未收到入口頁契約訊息');
+    assertEqual(entryContract.lang, 'zh-Hant', '入口頁 lang 不正確');
+    assertEqual(entryContract.hasViewport, true, '入口頁缺少 viewport');
+    assertEqual(entryContract.hasDescription, true, '入口頁缺少 description');
+    assertEqual(entryContract.hasCanonical, true, '入口頁缺少 canonical');
+    assertEqual(entryContract.hasOgTitle, true, '入口頁缺少 Open Graph title');
+    assertEqual(entryContract.hasOgDescription, true, '入口頁缺少 Open Graph description');
+    assertEqual(entryContract.hasTwitterCard, true, '入口頁缺少 Twitter card');
+    assertEqual(entryContract.hasProductSchema, true, '入口頁缺少 Product JSON-LD');
+    assertEqual(entryContract.hasSkipLink, true, '入口頁缺少 Skip Link');
+    assertEqual(entryContract.hasAppRoot, true, '入口頁缺少 app root 契約');
+    var entryScriptSources = entryContract.scriptSources;
+    var entryExpected = expected.map(function (source) {
+      return source.replace('../', './');
+    });
+    assertDeepEqual(entryScriptSources, entryExpected, '入口頁腳本順序不符');
+    entryContract.scriptTypes.forEach(function (type) {
+      assertEqual(type, '', '入口頁不可使用 type=module');
+    });
+    assertEqual(entryContract.hasNamespace, true, '入口頁未建立 PaperFlightAtlas');
+    assertEqual(entryContract.hasRenderedApp, true, '入口頁未完成掛載');
   }
 
   function testNamespaceBoundary() {
@@ -394,6 +429,11 @@
         assertMatch(svg, /role="img"/);
       });
     });
+
+    var totalSteps = namespace.data.planes.reduce(function (total, plane) {
+      return total + plane.steps.length;
+    }, 0);
+    assertEqual(totalSteps, 40, '步驟總數必須為 40');
 
     assertMatch(diagramApi.renderFoldDiagram('invalid', '預設示意圖'), /aria-label="預設示意圖"/);
     assertMatch(diagramApi.renderFoldDiagram('__proto__', '測試'), /^<svg/);
@@ -698,7 +738,24 @@
 
   global.PaperFlightAtlasBrowserTests = { run: run };
 
-  if (document.readyState === 'loading') {
+  var entryPreview = document.getElementById('entry-preview');
+  start = function startTests() {
+    if (!boundary.entryContract || (entryPreview && entryPreview.dataset.testsStarted)) {
+      return;
+    }
+
+    if (entryPreview) {
+      entryPreview.dataset.testsStarted = 'true';
+    }
+    run();
+  };
+
+  if (entryPreview) {
+    entryPreview.addEventListener('load', start, { once: true });
+    if (entryPreview.contentDocument && entryPreview.contentDocument.readyState === 'complete') {
+      start();
+    }
+  } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run, { once: true });
   } else {
     run();

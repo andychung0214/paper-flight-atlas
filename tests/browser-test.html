@@ -52,10 +52,22 @@
       .fail {
         color: #8b2d2d;
       }
+
+      .entry-preview {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        border: 0;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        overflow: hidden;
+        white-space: nowrap;
+      }
     </style>
     <script>
       window.__paperFlightAtlasBrowserBoundary = {
         errors: [],
+        entryContract: null,
         expectedScriptOrder: [
           "../src/data/planes.js",
           "../src/diagrams.js",
@@ -71,6 +83,15 @@
         var message = event && event.message ? event.message : "未知載入錯誤";
         boundary.errors.push(message);
       });
+
+      window.addEventListener("message", function (event) {
+        var boundary = window.__paperFlightAtlasBrowserBoundary;
+        var payload = event && event.data;
+
+        if (payload && payload.type === "paper-flight-atlas-entry-contract") {
+          boundary.entryContract = payload.contract;
+        }
+      });
     </script>
   </head>
   <body>
@@ -83,6 +104,12 @@
         <ol id="test-results"></ol>
       </section>
     </main>
+    <iframe
+      id="entry-preview"
+      class="entry-preview"
+      src="../index.html?paper-flight-atlas-test=1"
+      title="入口頁契約檢查"
+    ></iframe>
 
     <script data-app-script src="../src/data/planes.js"></script>
     <script data-app-script src="../src/diagrams.js"></script>

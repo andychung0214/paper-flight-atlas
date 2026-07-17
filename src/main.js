@@ -314,12 +314,55 @@ function bindInteractions(documentRef, windowRef, state) {
     state.isBound = true;
   }
 
-  renderCurrentRoute(documentRef, windowRef, state);
+    renderCurrentRoute(documentRef, windowRef, state);
+  }
+
+  function reportBrowserTestContract(documentRef, windowRef) {
+    var search = windowRef?.location?.search ?? '';
+
+    if (!search.includes('paper-flight-atlas-test=1') || windowRef?.parent === windowRef) {
+      return;
+    }
+
+    try {
+      var entryScripts = Array.prototype.slice.call(documentRef.querySelectorAll('script[src]'));
+      var productSchema = documentRef.querySelector('script[type="application/ld+json"]')?.textContent ?? '';
+      var productData = null;
+
+      try {
+        productData = JSON.parse(productSchema);
+      } catch {
+        productData = null;
+      }
+
+      windowRef.parent.postMessage({
+        type: 'paper-flight-atlas-entry-contract',
+        contract: {
+          lang: documentRef.documentElement?.lang ?? '',
+          hasViewport: Boolean(documentRef.querySelector('meta[name="viewport"]')),
+          hasDescription: Boolean(documentRef.querySelector('meta[name="description"]')),
+          hasCanonical: Boolean(documentRef.querySelector('link[rel="canonical"]')),
+          hasOgTitle: Boolean(documentRef.querySelector('meta[property="og:title"]')),
+          hasOgDescription: Boolean(documentRef.querySelector('meta[property="og:description"]')),
+          hasTwitterCard: Boolean(documentRef.querySelector('meta[name="twitter:card"]')),
+          hasProductSchema: productData?.['@type'] === 'Product',
+          hasSkipLink: Boolean(documentRef.querySelector('a[href="#app"][data-action="skip"]')),
+          hasAppRoot: Boolean(documentRef.querySelector('main#app[data-app-root][tabindex="-1"]')),
+          scriptSources: entryScripts.map(script => script.getAttribute('src')),
+          scriptTypes: entryScripts.map(script => script.getAttribute('type') || ''),
+          hasNamespace: Boolean(windowRef.PaperFlightAtlas),
+          hasRenderedApp: Boolean(documentRef.querySelector('#app .app-shell')),
+        },
+      }, '*');
+    } catch {
+      // 測試橋接失敗不應影響正式入口的互動功能。
+    }
   }
 
   namespace.app.mountApp = mountApp;
 
   if (typeof document !== 'undefined' && typeof window !== 'undefined' && document.querySelector('[data-app-root]')) {
     mountApp(document, window);
+    reportBrowserTestContract(document, window);
   }
 }(window));
