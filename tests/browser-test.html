@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="紙翼圖鑑瀏覽器原生測試頁。" />
     <title>紙翼圖鑑瀏覽器測試邊界</title>
     <style>
       body {
@@ -11,6 +12,20 @@
         font-family: "Noto Sans TC", sans-serif;
         background: #f4efe8;
         color: #223127;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        transform: translateY(-160%);
+        padding: 8px 12px;
+        background: #223127;
+        color: #fffdfa;
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
       }
 
       main {
@@ -59,9 +74,10 @@
     </script>
   </head>
   <body>
-    <main>
+    <a class="skip-link" href="#test-results" data-action="skip">跳到測試結果</a>
+    <main id="test-main">
       <section class="panel" aria-labelledby="test-title">
-        <p>這是 Task 1 的最小瀏覽器測試邊界，供後續 worker 擴充完整 browser-test page。</p>
+        <p>這是紙翼圖鑑的瀏覽器原生測試頁，直接開啟本檔即可檢查資料、畫面、互動與安全邊界。</p>
         <h1 id="test-title">紙翼圖鑑瀏覽器測試邊界</h1>
         <p id="test-summary">尚未執行測試。</p>
         <ol id="test-results"></ol>
