@@ -1,4 +1,10 @@
-const DEFAULT_DIAGRAM_ID = 'crease-center';
+(function registerDiagrams(global) {
+  'use strict';
+
+  const namespace = global.PaperFlightAtlas ?? (global.PaperFlightAtlas = {});
+  namespace.diagrams = namespace.diagrams ?? {};
+
+  const DEFAULT_DIAGRAM_ID = 'crease-center';
 
 const DIAGRAMS = {
   'crease-center': {
@@ -130,20 +136,23 @@ function renderDiagramContent(definition) {
   ].join('');
 }
 
-export function renderFoldDiagram(diagramId, label) {
-  const definition = Object.hasOwn(DIAGRAMS, diagramId)
-    ? DIAGRAMS[diagramId]
-    : DIAGRAMS[DEFAULT_DIAGRAM_ID];
-  const ariaLabel = escapeAttribute(label ?? '');
+  function renderFoldDiagram(diagramId, label) {
+    const definition = Object.hasOwn(DIAGRAMS, diagramId)
+      ? DIAGRAMS[diagramId]
+      : DIAGRAMS[DEFAULT_DIAGRAM_ID];
+    const ariaLabel = escapeAttribute(label ?? '');
 
-  return [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" focusable="false" aria-label="',
-    ariaLabel,
-    '">',
-    `<title>${ariaLabel}</title>`,
-    '<g fill="none" stroke-linecap="round" stroke-linejoin="round">',
-    renderDiagramContent(definition),
-    '</g>',
-    '</svg>',
-  ].join('');
-}
+    return [
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" focusable="false" aria-label="',
+      ariaLabel,
+      '">',
+      `<title>${ariaLabel}</title>`,
+      '<g fill="none" stroke-linecap="round" stroke-linejoin="round">',
+      renderDiagramContent(definition),
+      '</g>',
+      '</svg>',
+    ].join('');
+  }
+
+  namespace.diagrams.renderFoldDiagram = renderFoldDiagram;
+}(window));

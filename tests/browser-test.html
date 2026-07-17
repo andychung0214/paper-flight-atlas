@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>紙翼圖鑑瀏覽器測試邊界</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: "Noto Sans TC", sans-serif;
+        background: #f4efe8;
+        color: #223127;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      .panel {
+        background: #fffdfa;
+        border: 1px solid #d9d1c3;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(34, 49, 39, 0.08);
+      }
+
+      #test-results {
+        padding-left: 20px;
+      }
+
+      .pass {
+        color: #1d6b43;
+      }
+
+      .fail {
+        color: #8b2d2d;
+      }
+    </style>
+    <script>
+      window.__paperFlightAtlasBrowserBoundary = {
+        errors: [],
+        expectedScriptOrder: [
+          "../src/data/planes.js",
+          "../src/diagrams.js",
+          "../src/router.js",
+          "../src/storage.js",
+          "../src/render.js",
+          "../src/main.js"
+        ]
+      };
+
+      window.addEventListener("error", function (event) {
+        var boundary = window.__paperFlightAtlasBrowserBoundary;
+        var message = event && event.message ? event.message : "未知載入錯誤";
+        boundary.errors.push(message);
+      });
+    </script>
+  </head>
+  <body>
+    <main>
+      <section class="panel" aria-labelledby="test-title">
+        <p>這是 Task 1 的最小瀏覽器測試邊界，供後續 worker 擴充完整 browser-test page。</p>
+        <h1 id="test-title">紙翼圖鑑瀏覽器測試邊界</h1>
+        <p id="test-summary">尚未執行測試。</p>
+        <ol id="test-results"></ol>
+      </section>
+    </main>
+
+    <script data-app-script src="../src/data/planes.js"></script>
+    <script data-app-script src="../src/diagrams.js"></script>
+    <script data-app-script src="../src/router.js"></script>
+    <script data-app-script src="../src/storage.js"></script>
+    <script data-app-script src="../src/render.js"></script>
+    <script data-app-script src="../src/main.js"></script>
+    <script src="./browser-test.js"></script>
+  </body>
+</html>

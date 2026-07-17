@@ -1,10 +1,16 @@
-import {
-  buildAboutHash,
-  buildCatalogHash,
-  buildHomeHash,
-  buildPlaneHash,
-} from './router.js';
-import { renderFoldDiagram } from './diagrams.js';
+(function registerRender(global) {
+  'use strict';
+
+  const namespace = global.PaperFlightAtlas ?? (global.PaperFlightAtlas = {});
+  const router = namespace.router ?? {};
+  const diagrams = namespace.diagrams ?? {};
+  const {
+    buildAboutHash,
+    buildCatalogHash,
+    buildHomeHash,
+    buildPlaneHash,
+  } = router;
+  const { renderFoldDiagram } = diagrams;
 
 const difficultyOrder = Object.freeze(['basic', 'intermediate', 'advanced', 'master']);
 
@@ -203,18 +209,18 @@ function renderDifficultyFilters(planes, activeDifficulty) {
   `;
 }
 
-export function escapeHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
 
-export function renderHome({ planes, favorites }) {
-  const featuredPlane = Array.isArray(planes) && planes.length > 0 ? planes[0] : null;
-  const favoriteSet = toFavoriteSet(favorites);
+  function renderHome({ planes, favorites }) {
+    const featuredPlane = Array.isArray(planes) && planes.length > 0 ? planes[0] : null;
+    const favoriteSet = toFavoriteSet(favorites);
 
   return `
     <section class="hero-panel paper-panel">
@@ -237,15 +243,15 @@ export function renderHome({ planes, favorites }) {
       </aside>
     </section>
   `;
-}
+  }
 
-export function renderCatalog({ planes, favorites, activeDifficulty }) {
-  const filteredPlanes = activeDifficulty
-    ? planes.filter(plane => plane.difficulty === activeDifficulty)
-    : planes;
-  const cards = filteredPlanes.length > 0
-    ? filteredPlanes.map(plane => renderPlaneCard(plane, favorites)).join('')
-    : `
+  function renderCatalog({ planes, favorites, activeDifficulty }) {
+    const filteredPlanes = activeDifficulty
+      ? planes.filter(plane => plane.difficulty === activeDifficulty)
+      : planes;
+    const cards = filteredPlanes.length > 0
+      ? filteredPlanes.map(plane => renderPlaneCard(plane, favorites)).join('')
+      : `
       <article class="empty-state paper-panel">
         <p class="annotation-label">暫時留白</p>
         <h3>目前沒有符合的機型</h3>
@@ -266,20 +272,20 @@ export function renderCatalog({ planes, favorites, activeDifficulty }) {
       </div>
     </section>
   `;
-}
+  }
 
-export function renderGuide({ plane, stepIndex, favorites }) {
-  const safeStepIndex = clampStepIndex(stepIndex, plane.steps.length);
-  const step = plane.steps[safeStepIndex];
-  const previousStep = Math.max(safeStepIndex - 1, 0);
-  const nextStep = Math.min(safeStepIndex + 1, plane.steps.length - 1);
-  const guideHash = buildPlaneHash(plane.id, safeStepIndex);
-  const dialogId = `diagram-dialog-${plane.id}-${safeStepIndex}`;
-  const diagramLabel = `${plane.name} 第 ${safeStepIndex + 1} 步放大示意圖`;
-  const svg = renderFoldDiagram(
-    step.diagram,
-    `${plane.name} 第 ${safeStepIndex + 1} 步 ${step.title}`,
-  );
+  function renderGuide({ plane, stepIndex, favorites }) {
+    const safeStepIndex = clampStepIndex(stepIndex, plane.steps.length);
+    const step = plane.steps[safeStepIndex];
+    const previousStep = Math.max(safeStepIndex - 1, 0);
+    const nextStep = Math.min(safeStepIndex + 1, plane.steps.length - 1);
+    const guideHash = buildPlaneHash(plane.id, safeStepIndex);
+    const dialogId = `diagram-dialog-${plane.id}-${safeStepIndex}`;
+    const diagramLabel = `${plane.name} 第 ${safeStepIndex + 1} 步放大示意圖`;
+    const svg = renderFoldDiagram(
+      step.diagram,
+      `${plane.name} 第 ${safeStepIndex + 1} 步 ${step.title}`,
+    );
 
   return `
     <section class="guide-layout">
@@ -354,10 +360,10 @@ export function renderGuide({ plane, stepIndex, favorites }) {
       </aside>
     </section>
   `;
-}
+  }
 
-export function renderAbout() {
-  return `
+  function renderAbout() {
+    return `
     <section class="about-layout">
       <article class="paper-panel">
         <p class="annotation-label">工坊筆記</p>
@@ -378,18 +384,18 @@ export function renderAbout() {
       </article>
     </section>
   `;
-}
+  }
 
-export function renderApp({ route, planes, theme, favorites, activeDifficulty }) {
-  const safeRoute = route ?? { page: 'home' };
-  const safePlanes = Array.isArray(planes) ? planes : [];
-  const favoriteSet = toFavoriteSet(favorites);
-  const requestedPlane = safeRoute.page === 'plane'
-    ? safePlanes.find(plane => plane.id === safeRoute.id)
-    : null;
-  const fallbackToCatalog = safeRoute.page === 'plane' && !requestedPlane;
-  const effectiveRoute = fallbackToCatalog ? { page: 'catalog' } : safeRoute;
-  const currentPlane = effectiveRoute.page === 'plane' ? requestedPlane : null;
+  function renderApp({ route, planes, theme, favorites, activeDifficulty }) {
+    const safeRoute = route ?? { page: 'home' };
+    const safePlanes = Array.isArray(planes) ? planes : [];
+    const favoriteSet = toFavoriteSet(favorites);
+    const requestedPlane = safeRoute.page === 'plane'
+      ? safePlanes.find(plane => plane.id === safeRoute.id)
+      : null;
+    const fallbackToCatalog = safeRoute.page === 'plane' && !requestedPlane;
+    const effectiveRoute = fallbackToCatalog ? { page: 'catalog' } : safeRoute;
+    const currentPlane = effectiveRoute.page === 'plane' ? requestedPlane : null;
 
   let title = '紙翼圖鑑｜Paper Flight Atlas';
   let description = '在日式侘寂紙工坊中翻閱八種紙飛機標本卡，逐步完成自己的紙翼。';
@@ -450,4 +456,13 @@ export function renderApp({ route, planes, theme, favorites, activeDifficulty })
       </div>
     `,
   };
-}
+  }
+
+  namespace.render = namespace.render ?? {};
+  namespace.render.escapeHtml = escapeHtml;
+  namespace.render.renderHome = renderHome;
+  namespace.render.renderCatalog = renderCatalog;
+  namespace.render.renderGuide = renderGuide;
+  namespace.render.renderAbout = renderAbout;
+  namespace.render.renderApp = renderApp;
+}(window));

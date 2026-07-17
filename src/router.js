@@ -1,4 +1,10 @@
-const HOME_HASH = '#home';
+(function registerRouter(global) {
+  'use strict';
+
+  const namespace = global.PaperFlightAtlas ?? (global.PaperFlightAtlas = {});
+  namespace.router = namespace.router ?? {};
+
+  const HOME_HASH = '#home';
 const CATALOG_HASH = '#catalog';
 const ABOUT_HASH = '#about';
 
@@ -25,8 +31,8 @@ function parseStep(value) {
   return 0;
 }
 
-export function resolveHash(hash) {
-  const normalized = normalizeHash(hash);
+  function resolveHash(hash) {
+    const normalized = normalizeHash(hash);
 
   if (!normalized) {
     return {
@@ -89,25 +95,33 @@ export function resolveHash(hash) {
     route: { page: 'home' },
     recoveryHash: HOME_HASH,
   };
-}
+  }
 
-export function parseHash(hash) {
-  return resolveHash(hash).route;
-}
+  function parseHash(hash) {
+    return resolveHash(hash).route;
+  }
 
-export function buildHomeHash() {
-  return HOME_HASH;
-}
+  function buildHomeHash() {
+    return HOME_HASH;
+  }
 
-export function buildCatalogHash() {
-  return CATALOG_HASH;
-}
+  function buildCatalogHash() {
+    return CATALOG_HASH;
+  }
 
-export function buildPlaneHash(id, step = 0) {
-  const normalizedStep = parseStep(step);
-  return `#plane/${id}/step/${normalizedStep}`;
-}
+  function buildPlaneHash(id, step = 0) {
+    const normalizedStep = parseStep(step);
+    return `#plane/${id}/step/${normalizedStep}`;
+  }
 
-export function buildAboutHash() {
-  return ABOUT_HASH;
-}
+  function buildAboutHash() {
+    return ABOUT_HASH;
+  }
+
+  namespace.router.resolveHash = resolveHash;
+  namespace.router.parseHash = parseHash;
+  namespace.router.buildHomeHash = buildHomeHash;
+  namespace.router.buildCatalogHash = buildCatalogHash;
+  namespace.router.buildPlaneHash = buildPlaneHash;
+  namespace.router.buildAboutHash = buildAboutHash;
+}(window));

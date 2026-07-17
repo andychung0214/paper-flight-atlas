@@ -1,7 +1,12 @@
-import { planes } from './data/planes.js';
-import { renderApp } from './render.js';
-import { buildCatalogHash, resolveHash } from './router.js';
-import { createPreferenceStore } from './storage.js';
+(function registerApp(global) {
+  'use strict';
+
+  const namespace = global.PaperFlightAtlas ?? (global.PaperFlightAtlas = {});
+  const planes = namespace.data?.planes ?? [];
+  const { renderApp } = namespace.render ?? {};
+  const { buildCatalogHash, resolveHash } = namespace.router ?? {};
+  const { createPreferenceStore } = namespace.storage ?? {};
+  namespace.app = namespace.app ?? {};
 
 const THEME_COLORS = Object.freeze({
   forest: '#3d5a4d',
@@ -295,8 +300,8 @@ function bindInteractions(documentRef, windowRef, state) {
   });
 }
 
-export function mountApp(documentRef = document, windowRef = window) {
-  const appRoot = documentRef?.getElementById?.('app');
+  function mountApp(documentRef = document, windowRef = window) {
+    const appRoot = documentRef?.getElementById?.('app');
 
   if (!appRoot) {
     return;
@@ -310,8 +315,11 @@ export function mountApp(documentRef = document, windowRef = window) {
   }
 
   renderCurrentRoute(documentRef, windowRef, state);
-}
+  }
 
-if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-  mountApp(document, window);
-}
+  namespace.app.mountApp = mountApp;
+
+  if (typeof document !== 'undefined' && typeof window !== 'undefined' && document.querySelector('[data-app-root]')) {
+    mountApp(document, window);
+  }
+}(window));

@@ -1,13 +1,19 @@
-const difficultyLabels = Object.freeze({
+(function registerPlaneData(global) {
+  'use strict';
+
+  const namespace = global.PaperFlightAtlas ?? (global.PaperFlightAtlas = {});
+  namespace.data = namespace.data ?? {};
+
+  const difficultyLabels = Object.freeze({
   basic: '基礎',
   intermediate: '進階',
   advanced: '困難',
   master: '大師',
-});
+  });
 
-const difficultyOrder = Object.freeze(['basic', 'intermediate', 'advanced', 'master']);
+  const difficultyOrder = Object.freeze(['basic', 'intermediate', 'advanced', 'master']);
 
-const planeData = [
+  const planeData = [
   {
     id: 'classic-dart',
     name: 'Classic Dart',
@@ -392,28 +398,36 @@ const planeData = [
       },
     ],
   },
-];
+  ];
 
-function deepFreeze(value) {
-  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    Object.freeze(value);
-    for (const item of Object.values(value)) {
-      deepFreeze(item);
+  function deepFreeze(value) {
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      Object.freeze(value);
+      for (const item of Object.values(value)) {
+        deepFreeze(item);
+      }
     }
+    return value;
   }
-  return value;
-}
 
-export const planes = Object.freeze(planeData.map(plane => deepFreeze(plane)));
+  const planes = Object.freeze(planeData.map(plane => deepFreeze(plane)));
 
-const difficultySummary = difficultyOrder.map(id => ({
-  id,
-  label: difficultyLabels[id],
-  count: planes.filter(plane => plane.difficulty === id).length,
-}));
+  const difficultySummary = difficultyOrder.map(id => ({
+    id,
+    label: difficultyLabels[id],
+    count: planes.filter(plane => plane.difficulty === id).length,
+  }));
 
-export const getPlaneById = id => planes.find(plane => plane.id === id);
+  const getPlaneById = id => planes.find(plane => plane.id === id);
 
-export const getDifficultySummary = () => Object.freeze(difficultySummary.map(item => Object.freeze({ ...item })));
+  const getDifficultySummary = () => Object.freeze(difficultySummary.map(item => Object.freeze({ ...item })));
 
-export const getFeaturedPlane = () => planes[0];
+  const getFeaturedPlane = () => planes[0];
+
+  namespace.data.planes = planes;
+  namespace.data.difficultyLabels = difficultyLabels;
+  namespace.data.difficultyOrder = difficultyOrder;
+  namespace.data.getPlaneById = getPlaneById;
+  namespace.data.getDifficultySummary = getDifficultySummary;
+  namespace.data.getFeaturedPlane = getFeaturedPlane;
+}(window));
