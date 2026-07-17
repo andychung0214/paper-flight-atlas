@@ -102,9 +102,9 @@ function renderSiteHeader(route, theme, fallbackPlaneId) {
         <p>像翻閱紙工坊樣本卡一樣，安靜地挑一架適合今天風向的紙飛機。</p>
       </div>
       <nav class="site-nav" aria-label="主要導覽">
-        <button type="button" class="button button--ghost" data-action="navigate" data-hash="${escapeHtml(buildHomeHash())}">首頁</button>
-        <button type="button" class="button button--ghost" data-action="navigate" data-hash="${escapeHtml(buildCatalogHash())}">機型圖鑑</button>
-        <button type="button" class="button button--ghost" data-action="navigate" data-hash="${escapeHtml(buildAboutHash())}">關於</button>
+        <button type="button" class="button button--ghost" data-action="navigate" data-focus-key="nav:home" data-hash="${escapeHtml(buildHomeHash())}">首頁</button>
+        <button type="button" class="button button--ghost" data-action="navigate" data-focus-key="nav:catalog" data-hash="${escapeHtml(buildCatalogHash())}">機型圖鑑</button>
+        <button type="button" class="button button--ghost" data-action="navigate" data-focus-key="nav:about" data-hash="${escapeHtml(buildAboutHash())}">關於</button>
       </nav>
       ${renderThemeSwitcher(theme, route, fallbackPlaneId)}
     </header>
@@ -175,7 +175,7 @@ function renderPlaneCard(plane, favorites) {
       </section>
       <div class="plane-card__actions">
         ${renderFavoriteButton(plane.id, favorites, guideHash)}
-        <button type="button" class="button" data-action="navigate" data-hash="${escapeHtml(guideHash)}">查看教學</button>
+        <button type="button" class="button" data-action="navigate" data-focus-key="guide:${escapeHtml(plane.id)}" data-hash="${escapeHtml(guideHash)}">查看教學</button>
       </div>
     </article>
   `;
@@ -230,8 +230,8 @@ function renderDifficultyFilters(planes, activeDifficulty) {
         <p>在安靜的工作台上，挑一張紙、讀一則摺法，讓每道折線都像標本卡上的細註解一樣清楚。</p>
         <p class="hero-panel__status">已收藏 ${favoriteSet.size} 張機型</p>
         <div class="hero-panel__actions">
-          <button type="button" class="button" data-action="navigate" data-hash="${escapeHtml(buildCatalogHash())}">翻閱機型圖鑑</button>
-          <button type="button" class="button button--ghost" data-action="navigate" data-hash="${escapeHtml(buildAboutHash())}">紙材與安全提示</button>
+          <button type="button" class="button" data-action="navigate" data-focus-key="home:catalog" data-hash="${escapeHtml(buildCatalogHash())}">翻閱機型圖鑑</button>
+          <button type="button" class="button button--ghost" data-action="navigate" data-focus-key="home:about" data-hash="${escapeHtml(buildAboutHash())}">紙材與安全提示</button>
         </div>
       </div>
       <aside class="hero-panel__specimen paper-panel">
@@ -239,7 +239,7 @@ function renderDifficultyFilters(planes, activeDifficulty) {
         <h3>${escapeHtml(featuredPlane?.name ?? '尚無機型')}</h3>
         <p>${escapeHtml(featuredPlane?.summary ?? '稍後再回來，新的紙樣卡就會鋪好。')}</p>
         ${featuredPlane ? renderPlaneTraits(featuredPlane.flightTraits) : ''}
-        ${featuredPlane ? `<button type="button" class="button" data-action="navigate" data-hash="${escapeHtml(buildPlaneHash(featuredPlane.id, 0))}">從第一步開始</button>` : ''}
+        ${featuredPlane ? `<button type="button" class="button" data-action="navigate" data-focus-key="home:featured" data-hash="${escapeHtml(buildPlaneHash(featuredPlane.id, 0))}">從第一步開始</button>` : ''}
       </aside>
     </section>
   `;
@@ -291,7 +291,7 @@ function renderDifficultyFilters(planes, activeDifficulty) {
     <section class="guide-layout">
       <div class="guide-layout__primary paper-panel">
         <div class="guide-layout__header">
-          <button type="button" class="button button--ghost" data-action="navigate" data-hash="${escapeHtml(buildCatalogHash())}">返回圖鑑</button>
+          <button type="button" class="button button--ghost" data-action="navigate" data-focus-key="guide:back" data-hash="${escapeHtml(buildCatalogHash())}">返回圖鑑</button>
           ${renderFavoriteButton(plane.id, favorites, guideHash)}
         </div>
         <p class="annotation-label">${escapeHtml(plane.difficultyLabel)} ／ ${escapeHtml(plane.time)}</p>
@@ -346,6 +346,7 @@ function renderDifficultyFilters(planes, activeDifficulty) {
             type="button"
             class="button button--ghost"
             data-action="step"
+            data-focus-key="step:previous"
             data-hash="${escapeHtml(buildPlaneHash(plane.id, previousStep))}"
             ${safeStepIndex === 0 ? 'disabled' : ''}
           >上一則</button>
@@ -353,6 +354,7 @@ function renderDifficultyFilters(planes, activeDifficulty) {
             type="button"
             class="button"
             data-action="step"
+            data-focus-key="step:next"
             data-hash="${escapeHtml(buildPlaneHash(plane.id, nextStep))}"
             ${safeStepIndex === plane.steps.length - 1 ? 'disabled' : ''}
           >下一則</button>

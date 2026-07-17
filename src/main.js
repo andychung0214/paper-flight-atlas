@@ -111,6 +111,7 @@ function getState(documentRef, windowRef) {
 
   const nextState = {
     activeDifficulty: null,
+    pendingFocusKey: null,
     preferences: createPreferenceStore(getLocalStorage(windowRef)),
   };
 
@@ -154,18 +155,19 @@ function renderCurrentRoute(documentRef, windowRef, state, announcement, focusKe
   updateLiveRegion(documentRef, announcement ?? `${rendered.title} 已更新`);
 }
 
-function navigateToHash(windowRef, hash, rerender) {
+function navigateToHash(windowRef, hash, rerender, focusKey) {
   if (!hash || !windowRef?.location) {
-    rerender();
-    return;
+    rerender(undefined, focusKey);
+    return false;
   }
 
   if (windowRef.location.hash === hash) {
-    rerender();
-    return;
+    rerender(undefined, focusKey);
+    return false;
   }
 
   windowRef.location.hash = hash;
+  return true;
 }
 
 function openDiagramDialog(documentRef, state, opener) {
@@ -244,7 +246,11 @@ function bindInteractions(documentRef, windowRef, state) {
           state.activeDifficulty = null;
         }
 
-        navigateToHash(windowRef, actionTarget.dataset.hash, rerender);
+        state.pendingFocusKey = actionTarget.dataset.focusKey ?? null;
+        const hashChanged = navigateToHash(windowRef, actionTarget.dataset.hash, rerender, state.pendingFocusKey);
+        if (!hashChanged) {
+          state.pendingFocusKey = null;
+        }
         return;
       }
 
@@ -296,7 +302,9 @@ function bindInteractions(documentRef, windowRef, state) {
   }, true);
 
   windowRef.addEventListener('hashchange', () => {
-    rerender();
+    const focusKey = state.pendingFocusKey;
+    state.pendingFocusKey = null;
+    rerender(undefined, focusKey);
   });
 }
 

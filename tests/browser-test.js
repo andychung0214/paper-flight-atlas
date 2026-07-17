@@ -616,6 +616,34 @@
       assertEqual(documentRef.activeElement, replacement, scenario.focusKey + ' 應恢復焦點');
     });
 
+    var routeDocument = new FakeDocument();
+    var routeWindow = new FakeWindow('#home');
+    namespace.app.mountApp(routeDocument, routeWindow);
+    routeDocument.dispatch('click', {
+      target: new FakeActionTarget({ action: 'navigate', hash: '#catalog', focusKey: 'nav:catalog' }),
+      preventDefault: function preventDefault() {},
+    });
+    routeWindow.dispatch('hashchange');
+    assertEqual(
+      routeDocument.activeElement,
+      routeDocument.querySelector('[data-focus-key="nav:catalog"]'),
+      '主要導覽跨路由後應恢復焦點',
+    );
+
+    var stepDocument = new FakeDocument();
+    var stepWindow = new FakeWindow('#plane/classic-dart/step/0');
+    namespace.app.mountApp(stepDocument, stepWindow);
+    stepDocument.dispatch('click', {
+      target: new FakeActionTarget({ action: 'step', hash: '#plane/classic-dart/step/1', focusKey: 'step:next' }),
+      preventDefault: function preventDefault() {},
+    });
+    stepWindow.dispatch('hashchange');
+    assertEqual(
+      stepDocument.activeElement,
+      stepDocument.querySelector('[data-focus-key="step:next"]'),
+      '教學步驟切換後應恢復焦點',
+    );
+
     var skipDocument = new FakeDocument();
     var skipWindow = new FakeWindow('#catalog');
     namespace.app.mountApp(skipDocument, skipWindow);
@@ -652,6 +680,64 @@
     assertEqual(documentRef.dialog.open, false);
     assertEqual(escapeOpener.focused, true);
     assertEqual(windowRef.location.hash, '#plane/classic-dart/step/2');
+  }
+
+  function testHashchangeFocusRestoration() {
+    var navigationDocument = new FakeDocument();
+    var navigationWindow = new FakeWindow('#home');
+    namespace.app.mountApp(navigationDocument, navigationWindow);
+    navigationDocument.dispatch('click', {
+      target: new FakeActionTarget({ action: 'navigate', hash: '#catalog', focusKey: 'nav:catalog' }),
+      preventDefault: function preventDefault() {},
+    });
+    assertEqual(navigationWindow.location.hash, '#catalog');
+    navigationWindow.dispatch('hashchange');
+    var restoredNavigation = navigationDocument.querySelector('[data-focus-key="nav:catalog"]');
+    assert(restoredNavigation, '缺少可恢復的主要導覽 focus key');
+    assertEqual(
+      navigationDocument.activeElement,
+      restoredNavigation,
+      '主要導覽跨 hashchange 後應恢復到對應導覽控制項',
+    );
+
+    var guideDocument = new FakeDocument();
+    var guideWindow = new FakeWindow('#plane/classic-dart/step/1');
+    namespace.app.mountApp(guideDocument, guideWindow);
+    guideDocument.dispatch('click', {
+      target: new FakeActionTarget({
+        action: 'step',
+        hash: '#plane/classic-dart/step/2',
+        focusKey: 'step:next',
+      }),
+      preventDefault: function preventDefault() {},
+    });
+    assertEqual(guideWindow.location.hash, '#plane/classic-dart/step/2');
+    guideWindow.dispatch('hashchange');
+    var restoredNextStep = guideDocument.querySelector('[data-focus-key="step:next"]');
+    assert(restoredNextStep, '缺少可恢復的下一則 focus key');
+    assertEqual(
+      guideDocument.activeElement,
+      restoredNextStep,
+      '教學 step 跨 hashchange 後應恢復到下一則控制項',
+    );
+
+    guideDocument.dispatch('click', {
+      target: new FakeActionTarget({
+        action: 'step',
+        hash: '#plane/classic-dart/step/1',
+        focusKey: 'step:previous',
+      }),
+      preventDefault: function preventDefault() {},
+    });
+    assertEqual(guideWindow.location.hash, '#plane/classic-dart/step/1');
+    guideWindow.dispatch('hashchange');
+    var restoredPreviousStep = guideDocument.querySelector('[data-focus-key="step:previous"]');
+    assert(restoredPreviousStep, '缺少可恢復的上一則 focus key');
+    assertEqual(
+      guideDocument.activeElement,
+      restoredPreviousStep,
+      '教學 step 跨 hashchange 後應恢復到上一則控制項',
+    );
   }
 
   function testFallbacksAndPageContract() {
@@ -697,6 +783,7 @@
     createTest('首頁、圖鑑、教學、關於與安全文字可產生', testRenderers),
     createTest('掛載、導覽、收藏、主題與篩選互動可運作', testMountAndInteractions),
     createTest('Skip Link、焦點恢復、dialog 與取消操作可運作', testFocusSkipAndDialog),
+    createTest('主要導覽與教學步驟跨 hashchange 焦點可恢復', testHashchangeFocusRestoration),
     createTest('未知路由、缺少中繼資料、儲存失效與頁面契約可運作', testFallbacksAndPageContract),
   ];
 
@@ -739,11 +826,13 @@
   global.PaperFlightAtlasBrowserTests = { run: run };
 
   var entryPreview = document.getElementById('entry-preview');
+  var testsStarted = false;
   start = function startTests() {
-    if (!boundary.entryContract || (entryPreview && entryPreview.dataset.testsStarted)) {
+    if (testsStarted) {
       return;
     }
 
+    testsStarted = true;
     if (entryPreview) {
       entryPreview.dataset.testsStarted = 'true';
     }
@@ -751,10 +840,10 @@
   };
 
   if (entryPreview) {
-    entryPreview.addEventListener('load', start, { once: true });
-    if (entryPreview.contentDocument && entryPreview.contentDocument.readyState === 'complete') {
-      start();
-    }
+    entryPreview.addEventListener('load', function () {
+      global.setTimeout(start, 100);
+    }, { once: true });
+    global.setTimeout(start, 3000);
   } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run, { once: true });
   } else {
