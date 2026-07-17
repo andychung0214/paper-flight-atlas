@@ -80,12 +80,13 @@ paper-flight-atlas/
 5. 等待 GitHub Pages 發布後，從頁面提供的網址開啟 `index.html`。
 
 本專案不需要建構步驟；GitHub Pages 直接提供 HTML、CSS、JavaScript、SVG、`sitemap.xml` 與 `robots.txt`。
+部署完成後，請確認 `index.html` 的 canonical、Open Graph、Twitter 與 Product JSON-LD 網址，以及 `sitemap.xml` 的 `<loc>`、`robots.txt` 的 Sitemap 網址，都與實際 GitHub Pages 網址一致。若改用自訂網域或不同 repository 名稱，請同步更新這些檔案。
 
 ## 已知限制
 
 - 內容為靜態內建資料，尚未提供帳號、雲端同步、排行榜或多人功能。
 - 收藏與主題只保存在目前瀏覽器的儲存空間；清除網站資料會重設偏好。
-- 入口使用相對資產路徑，部署到子目錄時需要確認 GitHub Pages 的網址與 canonical 設定。
+- 入口使用相對資產路徑，部署到子目錄時需要同步確認 GitHub Pages、canonical、Open Graph、Product JSON-LD、sitemap 與 robots 設定。
 - 示意圖是教學線稿，不等同於真實空氣動力模擬；實際飛行仍受紙張、折痕與投擲環境影響。
 
 ## 授權

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://your-github-username.github.io/paper-flight-atlas/sitemap.xml
+Sitemap: https://andychung0214.github.io/paper-flight-atlas/sitemap.xml
