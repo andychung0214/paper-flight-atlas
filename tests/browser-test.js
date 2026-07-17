@@ -48,6 +48,12 @@
           );
         }
       }),
+      createTest("腳本不得使用 ES Module 類型", function () {
+        scripts.forEach(function (script, index) {
+          var type = (script.getAttribute("type") || "").toLowerCase();
+          assert(type === "", "第 ".concat(index + 1, " 支腳本不可使用 type=module"));
+        });
+      }),
       createTest("傳統腳本載入時不應出現錯誤", function () {
         assert(boundary.errors.length === 0, boundary.errors.join(" | "));
       }),
