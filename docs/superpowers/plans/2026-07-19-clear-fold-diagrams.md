@@ -31,15 +31,16 @@
 
 ---
 
-### Task 1: Lock the Forty-Step Diagram Data Contract
+### Task 1: Lock the Forty-Step Contract and Build the SVG Renderer
 
 **Files:**
 - Modify: `tests/browser-test.js`
 - Modify: `src/data/planes.js`
+- Rewrite: `src/diagrams.js`
 
 **Interfaces:**
 - Consumes: `PaperFlightAtlas.data.planes: Plane[]`.
-- Produces: every `Step.diagram` is a unique string matching `/^[a-z0-9-]+-0[1-5]$/`; key prefix equals the containing `Plane.id`.
+- Produces: every `Step.diagram` is a unique string matching `/^[a-z0-9-]+-0[1-5]$/`; key prefix equals the containing `Plane.id`; all keys produce the accessible two-panel SVG contract described below.
 
 - [ ] **Step 1: Split the data assertions from SVG rendering and add the failing uniqueness contract**
 
@@ -103,24 +104,13 @@ Run the Edge command from Step 2.
 
 Expected: `四十個步驟使用唯一且可追蹤的圖解鍵值` passes. The existing SVG test may fail because the renderer does not support the new keys yet; record that expected red state for Task 2.
 
-- [ ] **Step 5: Commit the data contract**
+- [ ] **Step 5: Continue directly to the renderer contract without committing**
 
-```powershell
-git add tests/browser-test.js src/data/planes.js
-git commit -m "test: 鎖定四十個專屬圖解鍵值"
-```
+The full suite is intentionally red until the new renderer supports the unique keys. Do not create a commit at this point; continue with the renderer steps below so the task ends in one green commit.
 
----
+#### Renderer continuation
 
-### Task 2: Build the Accessible Before-and-After SVG Renderer
-
-**Files:**
-- Modify: `tests/browser-test.js`
-- Rewrite: `src/diagrams.js`
-
-**Interfaces:**
-- Consumes: `renderFoldDiagram(diagramKey: string, label: string)` and keys from Task 1.
-- Produces: safe SVG with `data-diagram-key`, `.diagram-before`, `.diagram-after`, `.diagram-moving`, `.diagram-crease`, `.diagram-direction`, `.diagram-alignment`, `.diagram-hint`, `<title>`, and `<desc>`.
+The same task consumes `renderFoldDiagram(diagramKey: string, label: string)` and produces safe SVG with `data-diagram-key`, `.diagram-before`, `.diagram-after`, `.diagram-moving`, `.diagram-crease`, `.diagram-direction`, `.diagram-alignment`, `.diagram-hint`, `<title>`, and `<desc>`.
 
 - [ ] **Step 1: Replace the old six-id assertions with semantic SVG assertions that fail**
 
@@ -340,13 +330,13 @@ Expected: the 40-key test, semantic SVG test, fallback test, `__proto__` test, a
 - [ ] **Step 7: Commit the renderer**
 
 ```powershell
-git add tests/browser-test.js src/diagrams.js
-git commit -m "feat: 建立折前折後教學圖解"
+git add tests/browser-test.js src/data/planes.js src/diagrams.js
+git commit -m "feat: 建立四十張折前折後教學圖解"
 ```
 
 ---
 
-### Task 3: Integrate the Legend and Responsive Diagram Presentation
+### Task 2: Integrate the Legend and Responsive Diagram Presentation
 
 **Files:**
 - Modify: `tests/browser-test.js`
@@ -354,7 +344,7 @@ git commit -m "feat: 建立折前折後教學圖解"
 - Modify: `styles.css`
 
 **Interfaces:**
-- Consumes: the semantic SVG classes from Task 2.
+- Consumes: the semantic SVG classes from Task 1.
 - Produces: `.diagram-legend` with four explained markers and responsive diagram/dialog layouts.
 
 - [ ] **Step 1: Add failing render assertions for the persistent legend**
@@ -422,7 +412,7 @@ git commit -m "feat: 加入圖解圖例與響應式版面"
 
 ---
 
-### Task 4: Synchronize Step Copy and Project Documentation
+### Task 3: Synchronize Step Copy and Project Documentation
 
 **Files:**
 - Modify: `src/data/planes.js`
@@ -432,7 +422,7 @@ git commit -m "feat: 加入圖解圖例與響應式版面"
 - Modify: `docs/TEST-PLAN.md`
 
 **Interfaces:**
-- Consumes: the five action types and visual grammar from Tasks 1–3.
+- Consumes: the five action types and visual grammar from Tasks 1–2.
 - Produces: instruction copy that consistently states action → alignment → pressing method and documents the verified system.
 
 - [ ] **Step 1: Audit all 40 instructions against the rendered action**
@@ -485,7 +475,7 @@ git commit -m "docs: 同步專屬圖解說明與驗收方式"
 
 ---
 
-### Task 5: Complete Full Visual Verification and Review
+### Task 4: Complete Full Visual Verification and Review
 
 **Files:**
 - Verify: `index.html`
@@ -493,7 +483,7 @@ git commit -m "docs: 同步專屬圖解說明與驗收方式"
 - Verify: all modified source and documentation files
 
 **Interfaces:**
-- Consumes: completed application from Tasks 1–4.
+- Consumes: completed application from Tasks 1–3.
 - Produces: current test output, desktop/mobile screenshots, clean Git state, and review evidence.
 
 - [ ] **Step 1: Run the full browser-only test page from a clean browser process**
