@@ -852,6 +852,122 @@
     assertNotMatch(document.body.textContent, /視圖|質量|創建|集成|文檔/);
   }
 
+  function testGuideDiagramResponsivePresentation() {
+    var preview = document.getElementById('entry-preview');
+    var previewDocument = preview && preview.contentDocument;
+    var previewWindow = preview && preview.contentWindow;
+    var originalWidth = preview && preview.style.width;
+    var originalHeight = preview && preview.style.height;
+    var originalHash = previewWindow && previewWindow.location.hash;
+    var temporaryStyle;
+
+    assert(boundary.entryContract, '響應式圖解測試前尚未收到入口頁契約訊息');
+    assert(previewDocument && previewWindow, '響應式圖解測試無法取得入口 iframe');
+    assert(
+      previewWindow.PaperFlightAtlas
+        && previewWindow.PaperFlightAtlas.app
+        && typeof previewWindow.PaperFlightAtlas.app.mountApp === 'function',
+      '入口 iframe 缺少可掛載的 PaperFlightAtlas.app',
+    );
+
+    function mountGuide(width) {
+      preview.style.width = width + 'px';
+      previewWindow.location.hash = '#plane/classic-dart/step/1';
+      previewWindow.PaperFlightAtlas.app.mountApp(previewDocument, previewWindow);
+    }
+
+    function getGuideNodes() {
+      var app = previewDocument.getElementById('app');
+      var frame = app.querySelector('.diagram-frame');
+      var svg = Array.prototype.slice.call(frame.children).find(function (child) {
+        return child.tagName && child.tagName.toLowerCase() === 'svg';
+      });
+
+      return {
+        app: app,
+        canvas: app.querySelector('.diagram-dialog__canvas'),
+        frame: frame,
+        legend: app.querySelector('.diagram-legend'),
+        svg: svg,
+      };
+    }
+
+    function assertDialogOverflowAt419() {
+      var nodes;
+
+      mountGuide(419);
+      nodes = getGuideNodes();
+      assertEqual(
+        previewWindow.getComputedStyle(nodes.canvas).overflowX,
+        'auto',
+        '419px dialog 畫布必須允許水平捲動',
+      );
+    }
+
+    function countGridColumns(element) {
+      var columns = previewWindow.getComputedStyle(element).gridTemplateColumns.trim();
+
+      return columns ? columns.split(/\s+/).filter(Boolean).length : 0;
+    }
+
+    try {
+      preview.style.height = '2400px';
+
+      temporaryStyle = previewDocument.createElement('style');
+      temporaryStyle.textContent = '@media (max-width: 419px) { .diagram-dialog__canvas { overflow-x: hidden !important; } }';
+      previewDocument.head.appendChild(temporaryStyle);
+
+      var redObserved = false;
+      try {
+        assertDialogOverflowAt419();
+      } catch (error) {
+        redObserved = true;
+        assertMatch(error.message, /419px dialog 畫布/, '受控 RED 未觸發預期斷言');
+      }
+      assert(redObserved, '撤除 dialog 水平捲動規則時，行為測試必須進入 RED');
+
+      temporaryStyle.remove();
+      temporaryStyle = null;
+
+      assertDialogOverflowAt419();
+
+      mountGuide(420);
+      var nodes = getGuideNodes();
+      assertEqual(nodes.app.querySelectorAll('.diagram-legend').length, 1, '主畫面必須恰有一份圖例');
+      assertEqual(nodes.app.querySelectorAll('dialog .diagram-legend').length, 0, 'dialog 不可重複圖例');
+      assert(nodes.canvas, '缺少放大圖畫布');
+      assertNotMatch(previewWindow.getComputedStyle(nodes.canvas).overflowX, /^auto$/, '420px dialog 畫布不可水平捲動');
+
+      mountGuide(559);
+      nodes = getGuideNodes();
+      assertEqual(countGridColumns(nodes.legend), 1, '559px 圖例必須為單欄');
+
+      mountGuide(560);
+      nodes = getGuideNodes();
+      assertEqual(countGridColumns(nodes.legend), 2, '560px 圖例必須為雙欄');
+
+      mountGuide(390);
+      nodes = getGuideNodes();
+      var frameRect = nodes.frame.getBoundingClientRect();
+      var svgRect = nodes.svg.getBoundingClientRect();
+      assert(svgRect.left >= frameRect.left, '390px 主圖 SVG 左側不可超出圖解容器');
+      assert(svgRect.right <= frameRect.right, '390px 主圖 SVG 右側不可超出圖解容器');
+      assert(
+        previewDocument.documentElement.scrollWidth <= previewDocument.documentElement.clientWidth,
+        '390px 主畫面不可水平溢位',
+      );
+    } finally {
+      if (temporaryStyle) {
+        temporaryStyle.remove();
+      }
+
+      preview.style.width = originalWidth;
+      preview.style.height = originalHeight;
+      previewWindow.location.hash = originalHash || '#home';
+      previewWindow.PaperFlightAtlas.app.mountApp(previewDocument, previewWindow);
+    }
+  }
+
   var tests = [
     createTest('入口頁與測試頁符合瀏覽器原生腳本邊界', testScriptBoundary),
     createTest('腳本載入與 PaperFlightAtlas API 邊界正確', testNamespaceBoundary),
@@ -866,6 +982,7 @@
     createTest('Skip Link、焦點恢復、dialog 與取消操作可運作', testFocusSkipAndDialog),
     createTest('主要導覽與教學步驟跨 hashchange 焦點可恢復', testHashchangeFocusRestoration),
     createTest('未知路由、缺少中繼資料、儲存失效與頁面契約可運作', testFallbacksAndPageContract),
+    createTest('教學圖解圖例與響應式邊界符合實際瀏覽器樣式', testGuideDiagramResponsivePresentation),
   ];
 
   function addResult(listNode, status, name, detail) {
