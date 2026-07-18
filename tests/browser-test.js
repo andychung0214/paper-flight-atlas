@@ -356,6 +356,22 @@
     assertEqual(namespace.data.getPlaneById('unknown-plane'), undefined);
   }
 
+  function testUniqueDiagramKeys() {
+    var api = namespace.data;
+    var keys = [];
+
+    api.planes.forEach(function (plane) {
+      plane.steps.forEach(function (step, stepIndex) {
+        var expectedKey = plane.id + '-0' + (stepIndex + 1);
+        assertEqual(step.diagram, expectedKey, plane.name + ' 第 ' + (stepIndex + 1) + ' 步圖解鍵值應對應機型與順序');
+        keys.push(step.diagram);
+      });
+    });
+
+    assertEqual(keys.length, 40, '應有四十個步驟圖解鍵值');
+    assertEqual(new Set(keys).size, 40, '四十個圖解鍵值不得重複');
+  }
+
   function testRouter() {
     var router = namespace.router;
 
@@ -411,22 +427,28 @@
 
   function testDiagrams() {
     var diagramApi = namespace.diagrams;
-    var ids = ['crease-center', 'fold-nose', 'shape-wing', 'reinforce-body', 'finish-tip', 'master-lock'];
-
-    ids.forEach(function (id) {
-      var svg = diagramApi.renderFoldDiagram(id, '將紙張向中心線對摺');
-      assertMatch(svg, /^<svg/);
-      assertMatch(svg, /role="img"/);
-      assertMatch(svg, /aria-label="將紙張向中心線對摺"/);
-      assertMatch(svg, /viewBox=/);
-      assertNotMatch(svg, /<script/i);
-    });
+    var requiredDiagramMarkers = [
+      'data-diagram-key=',
+      'class="diagram-before"',
+      'class="diagram-after"',
+      'class="diagram-moving"',
+      'class="diagram-crease"',
+      'class="diagram-direction"',
+      'class="diagram-alignment"',
+      'class="diagram-hint"',
+      '<title>',
+      '<desc>',
+      '>折前<',
+      '>折後<',
+    ];
 
     namespace.data.planes.forEach(function (plane) {
-      plane.steps.forEach(function (step) {
+      plane.steps.forEach(function (step, stepIndex) {
         var svg = diagramApi.renderFoldDiagram(step.diagram, plane.name + ' ' + step.title);
-        assertMatch(svg, /^<svg/);
-        assertMatch(svg, /role="img"/);
+        requiredDiagramMarkers.forEach(function (marker) {
+          assert(svg.includes(marker), step.diagram + ' 缺少 ' + marker);
+        });
+        assert(svg.includes('data-diagram-key="' + step.diagram + '"'), step.diagram + ' 應保留可追蹤鍵值');
       });
     });
 
@@ -435,9 +457,11 @@
     }, 0);
     assertEqual(totalSteps, 40, '步驟總數必須為 40');
 
-    assertMatch(diagramApi.renderFoldDiagram('invalid', '預設示意圖'), /aria-label="預設示意圖"/);
-    assertMatch(diagramApi.renderFoldDiagram('__proto__', '測試'), /^<svg/);
-    var unsafe = diagramApi.renderFoldDiagram('crease-center', '中心線 "雙向" & <安全>');
+    var fallback = diagramApi.renderFoldDiagram('invalid', '預設示意圖');
+    assertMatch(fallback, /data-diagram-key="fallback"/);
+    assertMatch(fallback, /圖解準備中/);
+    assertMatch(diagramApi.renderFoldDiagram('__proto__', '測試'), /data-diagram-key="fallback"/);
+    var unsafe = diagramApi.renderFoldDiagram('classic-dart-01', '中心線 "雙向" & <安全>');
     assertMatch(unsafe, /aria-label="中心線 &quot;雙向&quot; &amp; &lt;安全&gt;"/);
     assertNotMatch(unsafe, /aria-label="[^"]*<[^\"]*"/);
   }
@@ -777,6 +801,7 @@
     createTest('入口頁與測試頁符合瀏覽器原生腳本邊界', testScriptBoundary),
     createTest('腳本載入與 PaperFlightAtlas API 邊界正確', testNamespaceBoundary),
     createTest('圖鑑有八種機型、四個難度與完整步驟', testPlaneCatalog),
+    createTest('四十個步驟使用唯一且可追蹤的圖解鍵值', testUniqueDiagramKeys),
     createTest('雜湊路由能解析、備援並建立標準網址', testRouter),
     createTest('收藏、主題與儲存失效備援可運作', testStorage),
     createTest('全部四十個步驟圖與安全 SVG 可產生', testDiagrams),
