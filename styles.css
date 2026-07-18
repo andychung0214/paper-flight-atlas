@@ -497,6 +497,72 @@ ul {
   opacity: 0.84;
 }
 
+.diagram-before {
+  fill: #fffaf0;
+  stroke: #4d443b;
+  stroke-width: 2;
+}
+
+.diagram-after {
+  fill: #fffaf0;
+  stroke: #4d443b;
+  stroke-width: 2;
+}
+
+.diagram-moving {
+  fill: rgba(225, 194, 107, 0.42);
+  stroke: rgba(151, 117, 49, 0.62);
+  stroke-width: 1.5;
+}
+
+.diagram-crease {
+  fill: none;
+  stroke: #4d443b;
+  stroke-width: 2;
+  stroke-dasharray: 8 8;
+}
+
+.diagram-direction {
+  fill: none;
+  stroke: #b4493f;
+  stroke-width: 3;
+}
+
+.diagram-process {
+  fill: none;
+  stroke: #b4493f;
+  stroke-width: 3;
+}
+
+#fold-arrow path {
+  fill: #b4493f;
+}
+
+.diagram-alignment {
+  fill: #fffaf0;
+  stroke: var(--accent-strong);
+  stroke-width: 2;
+}
+
+.diagram-panel-label {
+  fill: #4d443b;
+  font-family: var(--font-label);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.diagram-hint {
+  fill: #4d443b;
+  font-family: var(--font-sans);
+  font-size: 17px;
+}
+
+.diagram-fallback {
+  fill: #e8e2d8;
+  stroke: #4d443b;
+  stroke-width: 2;
+}
+
 .guide-note + .guide-note {
   padding-top: 0.25rem;
   border-top: 1px solid var(--line);

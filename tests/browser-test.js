@@ -466,6 +466,42 @@
     assertNotMatch(unsafe, /aria-label="[^"]*<[^\"]*"/);
   }
 
+  function testDiagramStyles() {
+    var request = new XMLHttpRequest();
+    request.open('GET', '../styles.css', false);
+    request.send(null);
+
+    assert(request.responseText.length > 0, '無法讀取圖解樣式表');
+
+    [
+      ['.diagram-before', 'fill', '#fffaf0'],
+      ['.diagram-before', 'stroke', '#4d443b'],
+      ['.diagram-after', 'fill', '#fffaf0'],
+      ['.diagram-after', 'stroke', '#4d443b'],
+      ['.diagram-moving', 'fill', 'rgba(225, 194, 107, 0.42)'],
+      ['.diagram-crease', 'fill', 'none'],
+      ['.diagram-crease', 'stroke-dasharray', '8 8'],
+      ['.diagram-direction', 'fill', 'none'],
+      ['.diagram-direction', 'stroke', '#b4493f'],
+      ['.diagram-process', 'fill', 'none'],
+      ['.diagram-process', 'stroke', '#b4493f'],
+      ['#fold-arrow path', 'fill', '#b4493f'],
+      ['.diagram-alignment', 'fill', '#fffaf0'],
+      ['.diagram-panel-label', 'fill', '#4d443b'],
+      ['.diagram-hint', 'fill', '#4d443b'],
+      ['.diagram-fallback', 'fill', '#e8e2d8'],
+    ].forEach(function (contract) {
+      var selector = contract[0];
+      var property = contract[1];
+      var value = contract[2];
+      var selectorPattern = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var rule = new RegExp(selectorPattern + '\\s*\\{([^}]*)\\}').exec(request.responseText);
+
+      assert(rule, '缺少圖解樣式選擇器 ' + selector);
+      assert(new RegExp(property + '\\s*:\\s*' + value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*;').test(rule[1]), selector + ' 缺少 ' + property + ': ' + value);
+    });
+  }
+
   function testRenderers() {
     var planes = namespace.data.planes;
     var render = namespace.render;
@@ -805,6 +841,7 @@
     createTest('雜湊路由能解析、備援並建立標準網址', testRouter),
     createTest('收藏、主題與儲存失效備援可運作', testStorage),
     createTest('全部四十個步驟圖與安全 SVG 可產生', testDiagrams),
+    createTest('折前折後圖解具備可讀語意樣式', testDiagramStyles),
     createTest('首頁、圖鑑、教學、關於與安全文字可產生', testRenderers),
     createTest('掛載、導覽、收藏、主題與篩選互動可運作', testMountAndInteractions),
     createTest('Skip Link、焦點恢復、dialog 與取消操作可運作', testFocusSkipAndDialog),
