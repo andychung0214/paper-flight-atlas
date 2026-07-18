@@ -878,14 +878,18 @@
 
     function getGuideNodes() {
       var app = previewDocument.getElementById('app');
+      var dialog = app.querySelector('.diagram-dialog');
       var frame = app.querySelector('.diagram-frame');
       var svg = Array.prototype.slice.call(frame.children).find(function (child) {
         return child.tagName && child.tagName.toLowerCase() === 'svg';
       });
 
+      dialog.setAttribute('open', '');
+
       return {
         app: app,
         canvas: app.querySelector('.diagram-dialog__canvas'),
+        dialog: dialog,
         frame: frame,
         legend: app.querySelector('.diagram-legend'),
         svg: svg,
@@ -902,6 +906,10 @@
         'auto',
         '419px dialog 畫布必須允許水平捲動',
       );
+      assert(
+        nodes.canvas.scrollWidth > nodes.canvas.clientWidth,
+        '419px dialog 畫布必須有可水平捲動內容',
+      );
     }
 
     function countGridColumns(element) {
@@ -914,7 +922,7 @@
       preview.style.height = '2400px';
 
       temporaryStyle = previewDocument.createElement('style');
-      temporaryStyle.textContent = '@media (max-width: 419px) { .diagram-dialog__canvas { overflow-x: hidden !important; } }';
+      temporaryStyle.textContent = '@media (max-width: 419px) { .diagram-dialog__canvas svg { width: 100% !important; max-width: 100% !important; } }';
       previewDocument.head.appendChild(temporaryStyle);
 
       var redObserved = false;
@@ -922,9 +930,9 @@
         assertDialogOverflowAt419();
       } catch (error) {
         redObserved = true;
-        assertMatch(error.message, /419px dialog 畫布/, '受控 RED 未觸發預期斷言');
+        assertMatch(error.message, /419px dialog 畫布必須有可水平捲動內容/, '受控 RED 未觸發預期捲動斷言');
       }
-      assert(redObserved, '撤除 dialog 水平捲動規則時，行為測試必須進入 RED');
+      assert(redObserved, '撤除 dialog 32rem SVG 寬度時，行為測試必須進入 RED');
 
       temporaryStyle.remove();
       temporaryStyle = null;
@@ -936,7 +944,11 @@
       assertEqual(nodes.app.querySelectorAll('.diagram-legend').length, 1, '主畫面必須恰有一份圖例');
       assertEqual(nodes.app.querySelectorAll('dialog .diagram-legend').length, 0, 'dialog 不可重複圖例');
       assert(nodes.canvas, '缺少放大圖畫布');
-      assertNotMatch(previewWindow.getComputedStyle(nodes.canvas).overflowX, /^auto$/, '420px dialog 畫布不可水平捲動');
+      assertEqual(previewWindow.getComputedStyle(nodes.canvas).overflowX, 'visible', '420px dialog 畫布必須為可見溢位');
+      assert(
+        nodes.canvas.scrollWidth <= nodes.canvas.clientWidth,
+        '420px dialog 畫布不可有水平捲動內容',
+      );
 
       mountGuide(559);
       nodes = getGuideNodes();
