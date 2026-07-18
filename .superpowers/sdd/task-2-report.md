@@ -86,3 +86,37 @@ Edge 同時輸出 Chromium task manager 與同步處理序的外部警告（`fal
 
 - 任務簡報的 `#plane/classic-dart/1` 不符合目前 router 契約，會回到首頁；驗證使用既有的 `#plane/classic-dart/step/1`。
 - Chromium 的 task manager 與同步處理序可能輸出外部警告，但 Edge 結束碼為 0，且測試頁為 13/13。
+
+## 審查修正：實際 iframe 響應式行為測試
+
+### 實作
+
+- 在 `tests/browser-test.js` 最後加入「教學圖解圖例與響應式邊界符合實際瀏覽器樣式」測試，直接使用 `tests/browser-test.html` 的 `#entry-preview` iframe。
+- 測試確認入口契約、正式 `PaperFlightAtlas.app.mountApp` 與 iframe 文件皆已可用；將雜湊網址設為 `#plane/classic-dart/step/1` 後直接掛載教學頁。
+- 實際 DOM 斷言主 app 恰有一份 `.diagram-legend`，dialog 內為零份。
+- 將 iframe 寬度切換至 419／420px，檢查 dialog 畫布實際 cascade 後的 `overflowX`；切換至 559／560px，依解析後的 `gridTemplateColumns` 軌道數檢查單欄／雙欄。
+- 在 390px 實際讀取主圖容器與直接 SVG 的矩形，確認 SVG 位於容器內，並確認 `scrollWidth <= clientWidth`。
+- 測試期間將 iframe 高度設為 2400px，避免垂直捲軸干擾 419／420px 邊界；結束時恢復原寬高與雜湊網址並重新掛載首頁。
+
+### RED / GREEN
+
+指令：
+
+```powershell
+$edge='C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+$url='file:///F:/Codex/Projects/paper-flight-atlas/.worktrees/clear-fold-diagrams/tests/browser-test.html'
+Start-Process -FilePath $edge -ArgumentList @('--headless=new', '--disable-gpu', '--allow-file-access-from-files', '--virtual-time-budget=5000', '--dump-dom', $url) -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru -Wait
+```
+
+- 受控 RED：測試暫時在 iframe 注入 `@media (max-width: 419px)` 的 `overflow-x: hidden !important`。419px 斷言拋出「419px dialog 畫布必須允許水平捲動」，證明新行為測試能偵測關鍵規則撤除；隨即移除暫時樣式。
+- GREEN：移除覆寫後重新斷言 419px 為 `auto`、420px 非 `auto`，並驗證 559／560px、390px 與圖例數量。Edge `--dump-dom` 輸出：`SUMMARY=全部 14 項測試通過。`、`FAILURES=0`、`EXIT=0`。
+
+### 自我審查
+
+- 測試讀取 iframe 內實際文件、樣式計算值與矩形，不再只依賴 CSS 原始文字 regex。
+- 受控 RED 的覆寫總在 `finally` 前移除；iframe 寬高、雜湊網址與 app 掛載狀態皆在 `finally` 還原，避免影響後續測試。
+- 沒有修改正式呈現程式碼或樣式；本次變更只補足測試保護。
+
+### 提交
+
+`17e3560 test: 補強圖解響應式行為測試`
