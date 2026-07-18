@@ -473,22 +473,29 @@
 
     assert(request.responseText.length > 0, '無法讀取圖解樣式表');
 
+    assertMatch(request.responseText, /\.diagram-before,\s*\.diagram-after\s*\{[^}]*fill\s*:\s*var\(--paper-bright\);[^}]*stroke\s*:\s*var\(--ink\);[^}]*stroke-width\s*:\s*3;/);
+
     [
-      ['.diagram-before', 'fill', '#fffaf0'],
-      ['.diagram-before', 'stroke', '#4d443b'],
-      ['.diagram-after', 'fill', '#fffaf0'],
-      ['.diagram-after', 'stroke', '#4d443b'],
-      ['.diagram-moving', 'fill', 'rgba(225, 194, 107, 0.42)'],
+      ['.diagram-moving', 'fill', '#e6b85f'],
+      ['.diagram-moving', 'fill-opacity', '.42'],
+      ['.diagram-moving', 'stroke', 'var(--accent)'],
+      ['.diagram-moving', 'stroke-width', '2'],
       ['.diagram-crease', 'fill', 'none'],
-      ['.diagram-crease', 'stroke-dasharray', '8 8'],
+      ['.diagram-crease', 'stroke', 'var(--muted)'],
+      ['.diagram-crease', 'stroke-width', '2'],
+      ['.diagram-crease', 'stroke-dasharray', '8 7'],
       ['.diagram-direction', 'fill', 'none'],
-      ['.diagram-direction', 'stroke', '#b4493f'],
+      ['.diagram-direction', 'stroke', 'var(--accent)'],
+      ['.diagram-direction', 'stroke-width', '5'],
       ['.diagram-process', 'fill', 'none'],
-      ['.diagram-process', 'stroke', '#b4493f'],
-      ['#fold-arrow path', 'fill', '#b4493f'],
-      ['.diagram-alignment', 'fill', '#fffaf0'],
-      ['.diagram-panel-label', 'fill', '#4d443b'],
-      ['.diagram-hint', 'fill', '#4d443b'],
+      ['.diagram-process', 'stroke', 'var(--accent)'],
+      ['#fold-arrow path', 'fill', 'var(--accent)'],
+      ['.diagram-alignment', 'fill', 'var(--accent)'],
+      ['.diagram-alignment', 'stroke', 'var(--paper-bright)'],
+      ['.diagram-panel-label', 'fill', 'var(--ink)'],
+      ['.diagram-panel-label', 'font', '700 18px/1 var(--font-utility)'],
+      ['.diagram-hint', 'fill', 'var(--ink)'],
+      ['.diagram-hint', 'font', '600 16px/1.4 var(--font-body)'],
       ['.diagram-fallback', 'fill', '#e8e2d8'],
     ].forEach(function (contract) {
       var selector = contract[0];
@@ -500,6 +507,13 @@
       assert(rule, '缺少圖解樣式選擇器 ' + selector);
       assert(new RegExp(property + '\\s*:\\s*' + value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*;').test(rule[1]), selector + ' 缺少 ' + property + ': ' + value);
     });
+
+    assertMatch(request.responseText, /\.diagram-frame svg\s*\{[^}]*width\s*:\s*100%;[^}]*max-width\s*:\s*100%;[^}]*min-width\s*:\s*0;[^}]*height\s*:\s*auto;/);
+    assertMatch(request.responseText, /\.guide-layout__primary\s*\{[^}]*min-width\s*:\s*0;/);
+    assertMatch(request.responseText, /\.guide-layout\s*\{[^}]*grid-template-columns\s*:\s*minmax\(0,\s*1fr\);/);
+    assertMatch(request.responseText, /\.diagram-legend\s*\{[^}]*grid-template-columns\s*:\s*1fr;/);
+    assertMatch(request.responseText, /@media\s*\(min-width:\s*560px\)\s*\{[\s\S]*?\.diagram-legend\s*\{[^}]*grid-template-columns\s*:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/);
+    assertMatch(request.responseText, /@media\s*\(max-width:\s*419px\)\s*\{[\s\S]*?\.diagram-dialog__canvas\s*\{[^}]*overflow-x\s*:\s*auto;[^}]*overflow-y\s*:\s*hidden;/);
   }
 
   function testRenderers() {
@@ -534,6 +548,11 @@
     assertMatch(guide, /摺紙提醒/);
     assertMatch(guide, /常見失手/);
     assertMatch(guide, /data-action="step"/);
+    assertMatch(guide, /class="diagram-legend"/);
+    assertMatch(guide, /虛線＝這一步的新折線/);
+    assertMatch(guide, /箭頭＝紙面移動方向/);
+    assertMatch(guide, /淡色區＝要移動的紙面/);
+    assertMatch(guide, /圓點＝需要對齊的位置/);
 
     var dialogGuide = render.renderGuide({ plane: planes[0], stepIndex: 1, favorites: [] });
     assertMatch(dialogGuide, /data-action="open-diagram"/);

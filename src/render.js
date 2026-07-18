@@ -300,6 +300,12 @@ function renderDifficultyFilters(planes, activeDifficulty) {
         <p class="step-status" aria-live="polite">第 ${safeStepIndex + 1} 步 / 共 ${plane.steps.length} 步</p>
         <div class="diagram-frame" aria-label="摺紙示意圖">
           ${svg}
+          <ul class="diagram-legend" aria-label="圖解符號說明">
+            <li><span class="diagram-legend__sample diagram-legend__sample--crease" aria-hidden="true"></span>虛線＝這一步的新折線</li>
+            <li><span class="diagram-legend__sample diagram-legend__sample--arrow" aria-hidden="true">→</span>箭頭＝紙面移動方向</li>
+            <li><span class="diagram-legend__sample diagram-legend__sample--moving" aria-hidden="true"></span>淡色區＝要移動的紙面</li>
+            <li><span class="diagram-legend__sample diagram-legend__sample--point" aria-hidden="true"></span>圓點＝需要對齊的位置</li>
+          </ul>
           <button
             type="button"
             class="button button--ghost diagram-frame__zoom"
