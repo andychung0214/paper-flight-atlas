@@ -120,3 +120,28 @@ Start-Process -FilePath $edge -ArgumentList @('--headless=new', '--disable-gpu',
 ### 提交
 
 `17e3560 test: 補強圖解響應式行為測試`
+
+## 第二次複審修正：dialog 實際捲動內容
+
+### 實作
+
+- 響應式行為測試現在開啟 iframe 內的 dialog，讓 `.diagram-dialog__canvas` 參與實際版面計算。
+- 419px 除了驗證 `overflowX === 'auto'`，也驗證 `canvas.scrollWidth > canvas.clientWidth`，確保 32rem SVG 真的建立水平捲動內容。
+- 420px 明確驗證 `overflowX === 'visible'` 與 `scrollWidth <= clientWidth`，確保邊界外沒有水平捲動內容。
+
+### RED / GREEN
+
+指令沿用前節以 Edge `Start-Process`、`RedirectStandardOutput` 與 `--dump-dom` 執行 `tests/browser-test.html`。
+
+- 受控 RED：暫時在 iframe 注入 `@media (max-width: 419px)`，把 dialog SVG 改為 `width: 100% !important; max-width: 100% !important;`。`overflow-x` 仍為 `auto`，但 canvas 不再有可捲動內容，419px 的新斷言拋出「419px dialog 畫布必須有可水平捲動內容」。finally 移除暫時樣式並恢復 iframe 尺寸、網址與掛載狀態。
+- GREEN：移除覆寫後，419px 實際有水平捲動內容；420px 的 `overflowX` 為 `visible` 且沒有溢位內容。Edge 輸出：`SUMMARY=全部 14 項測試通過。`、`EXIT=0`。
+
+### 自我審查
+
+- 419px 的新 RED 只改變 SVG 寬度，沒有把 overflow 強制隱藏，因此驗證的是新增的 `scrollWidth` 契約而非舊的 computed overflow 斷言。
+- 420px 使用精確 `visible` 比對，而非僅排除 `auto`。
+- 本次只修改測試與報告；正式程式與樣式沒有變更。
+
+### 提交
+
+`5378ba3 test: 驗證圖解捲動邊界`
