@@ -118,7 +118,7 @@
     var paper = state === 'before' ? parts.beforePaper : parts.afterPaper;
     var actionLayers = state === 'before'
       ? parts.moving + parts.crease + parts.direction + parts.alignment
-      : parts.alignment;
+      : parts.crease.replaceAll('diagram-crease', 'diagram-result-crease') + parts.alignment;
     return paper + actionLayers;
   }
 

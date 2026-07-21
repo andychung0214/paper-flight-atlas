@@ -553,6 +553,12 @@ ul {
   stroke-dasharray: 8 7;
 }
 
+.diagram-result-crease {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+}
+
 .diagram-direction {
   fill: none;
   stroke: var(--accent);
