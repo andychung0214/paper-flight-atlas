@@ -362,6 +362,62 @@ function bindInteractions(documentRef, windowRef, state) {
           hasRenderedApp: Boolean(documentRef.querySelector('#app .app-shell')),
         },
       }, '*');
+
+      windowRef.addEventListener('message', (event) => {
+        var payload = event?.data;
+
+        if (!payload || payload.type !== 'paper-flight-atlas-responsive-request') {
+          return;
+        }
+
+        windowRef.location.hash = '#plane/classic-dart/step/1';
+        mountApp(documentRef, windowRef);
+
+        windowRef.setTimeout(() => {
+            try {
+              var app = documentRef.getElementById('app');
+              var dialog = app?.querySelector('.diagram-dialog');
+              var canvas = app?.querySelector('.diagram-dialog__canvas');
+              var frame = app?.querySelector('.diagram-frame');
+              var svg = frame && Array.prototype.slice.call(frame.children).find((child) => child.tagName?.toLowerCase() === 'svg');
+              var legend = app?.querySelector('.diagram-legend');
+              var caption = app?.querySelector('.diagram-caption');
+              var markerIds = Array.prototype.slice.call(app?.querySelectorAll('marker[id]') ?? []).map((marker) => marker.id);
+              var frameRect = frame?.getBoundingClientRect();
+              var svgRect = svg?.getBoundingClientRect();
+              var columns = windowRef.getComputedStyle(legend).gridTemplateColumns.trim();
+
+              dialog?.setAttribute('open', '');
+              windowRef.parent.postMessage({
+                type: 'paper-flight-atlas-responsive-result',
+                requestId: payload.requestId,
+                contract: {
+                  viewportWidth: windowRef.innerWidth,
+                  legendColumns: columns ? columns.split(/\s+/).filter(Boolean).length : 0,
+                  canvasOverflowX: windowRef.getComputedStyle(canvas).overflowX,
+                  canvasClientWidth: canvas?.clientWidth ?? 0,
+                  canvasScrollWidth: canvas?.scrollWidth ?? 0,
+                  mainSvgInsideFrame: Boolean(
+                    frameRect
+                      && svgRect
+                      && svgRect.left >= frameRect.left
+                      && svgRect.right <= frameRect.right
+                  ),
+                  noHorizontalOverflow: documentRef.documentElement.scrollWidth <= documentRef.documentElement.clientWidth,
+                  captionFontSize: windowRef.getComputedStyle(caption).fontSize,
+                  markerCount: markerIds.length,
+                  uniqueMarkerCount: new Set(markerIds).size,
+                },
+              }, '*');
+            } catch (error) {
+              windowRef.parent.postMessage({
+                type: 'paper-flight-atlas-responsive-result',
+                requestId: payload.requestId,
+                error: error?.message ?? '響應式契約量測失敗',
+              }, '*');
+            }
+        }, 0);
+      });
     } catch {
       // 測試橋接失敗不應影響正式入口的互動功能。
     }
