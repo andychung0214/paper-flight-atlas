@@ -481,12 +481,24 @@
           assertMatch(step.instruction, /斜邊/, step.diagram + ' 必須說明斜邊動作');
           assertMatch(step.instruction, /(貼齊|緊貼)中心線/, step.diagram + ' 必須說明斜邊對齊中心線');
         } else if (stepIndex === 3) {
+          var bodyShape = /data-before-shape="narrow-body-(\d+)-(\d+)"/.exec(svg);
           assertMatch(step.instruction, /左半機身往右合起/, step.diagram + ' 必須說明機身對摺方向');
           assertMatch(step.instruction, /左右外輪廓完全重合/, step.diagram + ' 必須說明機身對齊目標');
+          assert(bodyShape, step.diagram + ' 必須以前一步收窄機身為折前輪廓');
+          assert(
+            svg.includes('data-target="right-body-edge" cx="' + (300 - Number(bodyShape[1])) + '" cy="' + bodyShape[2] + '"'),
+            step.diagram + ' 的機身對齊點必須落在右側輪廓節點',
+          );
         } else if (stepIndex === 4) {
+          var finishedShape = /data-after-shape="finished-wing-(\d+)-(\d+)"/.exec(svg);
           assertMatch(step.instruction, /機翼|寬翼|長翼|箭翼|窄翼|羽翼/, step.diagram + ' 必須說明機翼動作');
           assertMatch(step.instruction, /翻面/, step.diagram + ' 必須說明翻面');
           assertMatch(step.instruction, /相同角度重複/, step.diagram + ' 必須說明另一側對稱重複');
+          assert(finishedShape, step.diagram + ' 必須產生完成機翼輪廓');
+          assert(
+            svg.includes('data-target="matching-wing-angle" cx="270" cy="' + finishedShape[2] + '"'),
+            step.diagram + ' 的機翼對齊點必須落在完成翼尖',
+          );
         }
       });
 

@@ -126,13 +126,16 @@
 
   function buildBodyFold(profile) {
     var states = buildStates(profile);
+    var narrowY = 110 + Math.round((1 - profile.wing) * 24);
+    var narrowX = 82 + Math.round(profile.wing * 16);
+    var targetX = 300 - narrowX;
     return diagramParts(
       states[3],
       states[4],
       '<path class="diagram-moving" d="M150 8L14 150L110 198H150Z" />',
       '<path class="diagram-crease" d="M150 8V198" />',
-      '<path class="diagram-direction" d="M72 94Q150 48 238 104" marker-end="url(#fold-arrow)" />',
-      '<circle class="diagram-alignment" data-target="right-body-edge" cx="238" cy="104" r="7" />',
+      '<path class="diagram-direction" d="M' + narrowX + ' ' + narrowY + 'Q150 62 ' + (targetX - 10) + ' ' + narrowY + '" marker-end="url(#fold-arrow)" />',
+      '<circle class="diagram-alignment" data-target="right-body-edge" cx="' + targetX + '" cy="' + narrowY + '" r="7" />',
       STEP_HINTS[4]
     );
   }
@@ -149,7 +152,7 @@
       '<path class="diagram-moving" d="M150 8L' + (300 - narrowX) + ' ' + narrowY + 'L270 198L' + wingTailX + ' 198Z" />',
       '<path class="diagram-crease" d="M174 82L' + wingTailX + ' 198" />',
       '<path class="diagram-direction" d="M220 92Q246 124 250 ' + (wingTipY - 4) + '" marker-end="url(#fold-arrow)" />',
-      '<circle class="diagram-alignment" data-target="matching-wing-angle" cx="250" cy="' + wingTipY + '" r="7" />',
+      '<circle class="diagram-alignment" data-target="matching-wing-angle" cx="270" cy="' + wingTipY + '" r="7" />',
       STEP_HINTS[5]
     );
   }
