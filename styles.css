@@ -587,15 +587,9 @@ ul {
   stroke-width: 2;
 }
 
-.diagram-panel-label {
+.diagram-fallback-text {
   fill: var(--ink);
-  font: 700 24px/1 var(--font-utility);
-  letter-spacing: .08em;
-}
-
-.diagram-hint {
-  fill: var(--ink);
-  font: 600 21px/1.4 var(--font-body);
+  font: 700 24px/1.4 var(--font-body);
 }
 
 .diagram-caption {

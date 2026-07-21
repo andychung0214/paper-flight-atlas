@@ -5,14 +5,14 @@
   namespace.diagrams = namespace.diagrams ?? {};
 
   const PLANE_PROFILES = Object.freeze({
-    'classic-dart': Object.freeze({ nose: 0.82, wing: 0.58, tail: 0.24 }),
-    'beginner-glider': Object.freeze({ nose: 0.58, wing: 0.86, tail: 0.34 }),
-    'sky-arrow': Object.freeze({ nose: 0.9, wing: 0.5, tail: 0.2 }),
-    longtail: Object.freeze({ nose: 0.72, wing: 0.68, tail: 0.78 }),
-    'swift-spear': Object.freeze({ nose: 0.96, wing: 0.42, tail: 0.18 }),
-    'loop-wing': Object.freeze({ nose: 0.66, wing: 0.8, tail: 0.46 }),
-    'origami-falcon': Object.freeze({ nose: 0.92, wing: 0.74, tail: 0.4 }),
-    'wabi-sabi-crane': Object.freeze({ nose: 0.62, wing: 0.9, tail: 0.7 }),
+    'classic-dart': Object.freeze({ wing: 0.58, tail: 0.24 }),
+    'beginner-glider': Object.freeze({ wing: 0.86, tail: 0.34 }),
+    'sky-arrow': Object.freeze({ wing: 0.5, tail: 0.2 }),
+    longtail: Object.freeze({ wing: 0.68, tail: 0.78 }),
+    'swift-spear': Object.freeze({ wing: 0.42, tail: 0.18 }),
+    'loop-wing': Object.freeze({ wing: 0.8, tail: 0.46 }),
+    'origami-falcon': Object.freeze({ wing: 0.74, tail: 0.4 }),
+    'wabi-sabi-crane': Object.freeze({ wing: 0.9, tail: 0.7 }),
   });
 
   const STEP_HINTS = Object.freeze({
@@ -22,6 +22,33 @@
     4: '沿中心線合起，左右輪廓完全重合',
     5: '上層機翼向下摺，翻面後等角度重複',
   });
+
+  function point(x, y) {
+    return { x: x, y: y };
+  }
+
+  function formatNumber(value) {
+    var rounded = Math.round(value * 1000) / 1000;
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+  }
+
+  function pointText(value) {
+    return formatNumber(value.x) + ',' + formatNumber(value.y);
+  }
+
+  function pathPoint(value) {
+    return formatNumber(value.x) + ' ' + formatNumber(value.y);
+  }
+
+  function reflectPoint(source, lineStart, lineEnd) {
+    var dx = lineEnd.x - lineStart.x;
+    var dy = lineEnd.y - lineStart.y;
+    var lengthSquared = dx * dx + dy * dy;
+    var projection = ((source.x - lineStart.x) * dx + (source.y - lineStart.y) * dy) / lengthSquared;
+    var projectedX = lineStart.x + projection * dx;
+    var projectedY = lineStart.y + projection * dy;
+    return point(2 * projectedX - source.x, 2 * projectedY - source.y);
+  }
 
   function parseDiagramKey(diagramKey) {
     var match = /^([a-z0-9-]+)-0([1-5])$/.exec(String(diagramKey));
@@ -33,44 +60,76 @@
     return { shape: shape, path: path, details: details || '' };
   }
 
-  function buildStates(profile) {
-    var shoulderY = 82 + Math.round((1 - profile.nose) * 34);
-    var narrowY = 110 + Math.round((1 - profile.wing) * 24);
-    var narrowX = 82 + Math.round(profile.wing * 16);
-    var wingTipY = 138 + Math.round((1 - profile.wing) * 30);
-    var wingTailX = 202 + Math.round(profile.tail * 18);
-
-    return [
-      paperState('sheet-240x190', 'M30 8H270V198H30Z'),
-      paperState(
-        'sheet-240x190-center',
-        'M30 8H270V198H30Z',
-        '<path class="diagram-existing-crease" d="M150 8V198" />'
-      ),
-      paperState(
-        'nose-' + shoulderY,
-        'M150 8L270 ' + shoulderY + 'V198H30V' + shoulderY + 'Z',
-        '<path class="diagram-existing-crease" d="M30 ' + shoulderY + 'L150 8L270 ' + shoulderY + '" /><path class="diagram-existing-crease" d="M150 8V198" />'
-      ),
-      paperState(
-        'narrow-body-' + narrowX + '-' + narrowY,
-        'M150 8L' + (300 - narrowX) + ' ' + narrowY + 'L270 198H30L' + narrowX + ' ' + narrowY + 'Z',
-        '<path class="diagram-existing-crease" d="M' + narrowX + ' ' + narrowY + 'L150 8L' + (300 - narrowX) + ' ' + narrowY + 'M150 8V198" />'
-      ),
-      paperState(
-        'folded-body-' + narrowX + '-' + narrowY,
-        'M150 8L' + (300 - narrowX) + ' ' + narrowY + 'L270 198H150Z',
-        '<path class="diagram-existing-crease" d="M150 8V198" />'
-      ),
-      paperState(
-        'finished-wing-' + wingTailX + '-' + wingTipY,
-        'M150 8L270 ' + wingTipY + 'L' + wingTailX + ' 198H150Z',
-        '<path class="diagram-existing-crease" d="M150 8V198M174 82L' + wingTailX + ' 198" />'
-      ),
-    ];
+  function geometry(source, target, creaseStart, creaseEnd) {
+    return {
+      source: source,
+      target: target,
+      creaseStart: creaseStart,
+      creaseEnd: creaseEnd,
+    };
   }
 
-  function diagramParts(beforeState, afterState, moving, crease, direction, alignment, hint) {
+  function buildModel(profile) {
+    var top = point(150, 8);
+    var bottomCenter = point(150, 198);
+    var firstCornerTarget = point(150, 128);
+    var secondCornerTarget = point(150, 8 + Math.hypot(120, 120));
+    var secondCreaseMidpoint = point(
+      (30 + secondCornerTarget.x) / 2,
+      (128 + secondCornerTarget.y) / 2
+    );
+    var creaseScale = (198 - top.y) / (secondCreaseMidpoint.y - top.y);
+    var secondCreaseLeft = point(
+      top.x + (secondCreaseMidpoint.x - top.x) * creaseScale,
+      198
+    );
+    var secondCreaseRight = point(300 - secondCreaseLeft.x, 198);
+    var wingCreaseRatio = Math.max(0.28, Math.min(0.5, 0.3 + (1 - profile.wing) * 0.18 + (profile.tail - 0.5) * 0.03));
+    var wingCreaseTop = point(
+      top.x + (secondCreaseRight.x - top.x) * wingCreaseRatio,
+      top.y + (secondCreaseRight.y - top.y) * wingCreaseRatio
+    );
+    var foldedWingTip = reflectPoint(secondCreaseRight, wingCreaseTop, bottomCenter);
+
+    var states = [
+      paperState('sheet', 'M30 8H270V198H30Z'),
+      paperState('sheet-center-crease', 'M30 8H270V198H30Z', '<path class="diagram-existing-crease" d="M150 8V198" />'),
+      paperState(
+        'first-corners',
+        'M150 8L270 128V198H30V128Z',
+        '<path class="diagram-existing-crease" d="M150 8L30 128M150 8L270 128M150 8V198" />'
+      ),
+      paperState(
+        'second-corners',
+        'M150 8L' + pathPoint(secondCreaseRight) + 'H' + formatNumber(secondCreaseLeft.x) + 'Z',
+        '<path class="diagram-existing-crease" d="M150 8L' + pathPoint(secondCreaseLeft) + 'M150 8L' + pathPoint(secondCreaseRight) + 'M150 8V198" />'
+      ),
+      paperState(
+        'folded-body',
+        'M150 8L' + pathPoint(secondCreaseRight) + 'H150Z',
+        '<path class="diagram-existing-crease" d="M150 8V198" />'
+      ),
+      paperState(
+        'finished-wing-' + formatNumber(wingCreaseRatio),
+        'M150 8L' + pathPoint(wingCreaseTop) + 'L150 198ZM' + pathPoint(wingCreaseTop) + 'L' + pathPoint(foldedWingTip) + 'L150 198Z',
+        '<path class="diagram-existing-crease" d="M' + pathPoint(wingCreaseTop) + 'L150 198" />'
+      ),
+    ];
+
+    return {
+      states: states,
+      top: top,
+      bottomCenter: bottomCenter,
+      firstCornerTarget: firstCornerTarget,
+      secondCornerTarget: secondCornerTarget,
+      secondCreaseLeft: secondCreaseLeft,
+      secondCreaseRight: secondCreaseRight,
+      wingCreaseTop: wingCreaseTop,
+      foldedWingTip: foldedWingTip,
+    };
+  }
+
+  function diagramParts(beforeState, afterState, moving, crease, direction, alignment, hint, foldGeometry) {
     return {
       beforeState: beforeState,
       afterState: afterState,
@@ -79,90 +138,94 @@
       direction: direction,
       alignment: alignment,
       hint: hint,
+      geometry: foldGeometry,
     };
   }
 
   function buildCenterCrease(profile) {
-    var states = buildStates(profile);
+    var model = buildModel(profile);
     return diagramParts(
-      states[0],
-      states[1],
+      model.states[0],
+      model.states[1],
       '<path class="diagram-moving" d="M30 8H150V198H30Z" />',
-      '<path class="diagram-crease" d="M150 8V198" />',
-      '<path class="diagram-direction" d="M70 62Q150 18 258 66" marker-end="url(#fold-arrow)" />',
-      '<circle class="diagram-alignment" data-target="right-long-edge" cx="270" cy="66" r="7" />',
-      STEP_HINTS[1]
+      '<path class="diagram-crease" d="M150 8L150 198" />',
+      '<path class="diagram-direction" d="M42 70Q150 22 258 70" marker-end="url(#fold-arrow)" />',
+      '<circle class="diagram-alignment" data-target="right-long-edge" cx="270" cy="70" r="7" />',
+      STEP_HINTS[1],
+      geometry(point(30, 70), point(270, 70), point(150, 8), point(150, 198))
     );
   }
 
   function buildNoseFold(profile) {
-    var states = buildStates(profile);
-    var shoulderY = 82 + Math.round((1 - profile.nose) * 34);
+    var model = buildModel(profile);
     return diagramParts(
-      states[1],
-      states[2],
-      '<path class="diagram-moving" d="M30 8H150L30 ' + shoulderY + 'ZM270 8H150L270 ' + shoulderY + 'Z" />',
-      '<path class="diagram-crease" d="M30 ' + shoulderY + 'L150 8L270 ' + shoulderY + '" />',
-      '<path class="diagram-direction" d="M72 46Q108 66 140 ' + (shoulderY - 8) + 'M228 46Q192 66 160 ' + (shoulderY - 8) + '" marker-end="url(#fold-arrow)" />',
-      '<circle class="diagram-alignment" data-target="center-line" cx="150" cy="' + shoulderY + '" r="7" />',
-      STEP_HINTS[2]
+      model.states[1],
+      model.states[2],
+      '<path class="diagram-moving" d="M30 8H150L30 128ZM270 8H150L270 128Z" />',
+      '<path class="diagram-crease" d="M150 8L30 128M150 8L270 128" />',
+      '<path class="diagram-direction" d="M42 24Q92 70 140 118M258 24Q208 70 160 118" marker-end="url(#fold-arrow)" />',
+      '<circle class="diagram-alignment" data-target="center-line" cx="150" cy="128" r="7" />',
+      STEP_HINTS[2],
+      geometry(point(30, 8), model.firstCornerTarget, model.top, point(30, 128))
     );
   }
 
-  function buildWingFold(profile) {
-    var states = buildStates(profile);
-    var narrowY = 110 + Math.round((1 - profile.wing) * 24);
-    var narrowX = 82 + Math.round(profile.wing * 16);
+  function buildSecondNoseFold(profile) {
+    var model = buildModel(profile);
+    var left = model.secondCreaseLeft;
+    var right = model.secondCreaseRight;
+    var target = model.secondCornerTarget;
     return diagramParts(
-      states[2],
-      states[3],
-      '<path class="diagram-moving" d="M30 90L' + narrowX + ' ' + narrowY + 'L30 188ZM270 90L' + (300 - narrowX) + ' ' + narrowY + 'L270 188Z" />',
-      '<path class="diagram-crease" d="M' + narrowX + ' ' + narrowY + 'L30 188M' + (300 - narrowX) + ' ' + narrowY + 'L270 188" />',
-      '<path class="diagram-direction" d="M68 134Q104 126 140 130M232 134Q196 126 160 130" marker-end="url(#fold-arrow)" />',
-      '<circle class="diagram-alignment" data-target="center-line" cx="150" cy="130" r="7" />',
-      STEP_HINTS[3]
+      model.states[2],
+      model.states[3],
+      '<path class="diagram-moving" d="M150 8L30 128V198H' + formatNumber(left.x) + 'ZM150 8L270 128V198H' + formatNumber(right.x) + 'Z" />',
+      '<path class="diagram-crease" d="M150 8L' + pathPoint(left) + 'M150 8L' + pathPoint(right) + '" />',
+      '<path class="diagram-direction" d="M42 136Q92 156 140 ' + formatNumber(target.y - 4) + 'M258 136Q208 156 160 ' + formatNumber(target.y - 4) + '" marker-end="url(#fold-arrow)" />',
+      '<circle class="diagram-alignment" data-target="center-line" cx="150" cy="' + formatNumber(target.y) + '" r="7" />',
+      STEP_HINTS[3],
+      geometry(point(30, 128), target, model.top, left)
     );
   }
 
   function buildBodyFold(profile) {
-    var states = buildStates(profile);
-    var narrowY = 110 + Math.round((1 - profile.wing) * 24);
-    var narrowX = 82 + Math.round(profile.wing * 16);
-    var targetX = 300 - narrowX;
+    var model = buildModel(profile);
+    var left = model.secondCreaseLeft;
+    var right = model.secondCreaseRight;
     return diagramParts(
-      states[3],
-      states[4],
-      '<path class="diagram-moving" d="M150 8L14 150L110 198H150Z" />',
-      '<path class="diagram-crease" d="M150 8V198" />',
-      '<path class="diagram-direction" d="M' + narrowX + ' ' + narrowY + 'Q150 62 ' + (targetX - 10) + ' ' + narrowY + '" marker-end="url(#fold-arrow)" />',
-      '<circle class="diagram-alignment" data-target="right-body-edge" cx="' + targetX + '" cy="' + narrowY + '" r="7" />',
-      STEP_HINTS[4]
+      model.states[3],
+      model.states[4],
+      '<path class="diagram-moving" d="M150 8L' + pathPoint(left) + 'H150Z" />',
+      '<path class="diagram-crease" d="M150 8L150 198" />',
+      '<path class="diagram-direction" d="M' + formatNumber(left.x + 8) + ' 174Q150 108 ' + formatNumber(right.x - 8) + ' 174" marker-end="url(#fold-arrow)" />',
+      '<circle class="diagram-alignment" data-target="right-body-edge" cx="' + formatNumber(right.x) + '" cy="198" r="7" />',
+      STEP_HINTS[4],
+      geometry(left, right, model.top, model.bottomCenter)
     );
   }
 
-  function buildTipFinish(profile) {
-    var states = buildStates(profile);
-    var narrowY = 110 + Math.round((1 - profile.wing) * 24);
-    var narrowX = 82 + Math.round(profile.wing * 16);
-    var wingTipY = 138 + Math.round((1 - profile.wing) * 30);
-    var wingTailX = 202 + Math.round(profile.tail * 18);
+  function buildWingFold(profile) {
+    var model = buildModel(profile);
+    var creaseTop = model.wingCreaseTop;
+    var source = model.secondCreaseRight;
+    var target = model.foldedWingTip;
     return diagramParts(
-      states[4],
-      states[5],
-      '<path class="diagram-moving" d="M150 8L' + (300 - narrowX) + ' ' + narrowY + 'L270 198L' + wingTailX + ' 198Z" />',
-      '<path class="diagram-crease" d="M174 82L' + wingTailX + ' 198" />',
-      '<path class="diagram-direction" d="M220 92Q246 124 250 ' + (wingTipY - 4) + '" marker-end="url(#fold-arrow)" />',
-      '<circle class="diagram-alignment" data-target="matching-wing-angle" cx="270" cy="' + wingTipY + '" r="7" />',
-      STEP_HINTS[5]
+      model.states[4],
+      model.states[5],
+      '<path class="diagram-moving" d="M' + pathPoint(creaseTop) + 'L' + pathPoint(source) + 'L150 198Z" />',
+      '<path class="diagram-crease" d="M' + pathPoint(creaseTop) + 'L150 198" />',
+      '<path class="diagram-direction" d="M' + pathPoint(source) + 'Q' + formatNumber((source.x + target.x) / 2 + 18) + ' ' + formatNumber((source.y + target.y) / 2) + ' ' + pathPoint(target) + '" marker-end="url(#fold-arrow)" />',
+      '<circle class="diagram-alignment" data-target="matching-wing-angle" cx="' + formatNumber(target.x) + '" cy="' + formatNumber(target.y) + '" r="7" />',
+      STEP_HINTS[5],
+      geometry(source, target, creaseTop, model.bottomCenter)
     );
   }
 
   const ACTION_BUILDERS = Object.freeze({
     1: buildCenterCrease,
     2: buildNoseFold,
-    3: buildWingFold,
+    3: buildSecondNoseFold,
     4: buildBodyFold,
-    5: buildTipFinish,
+    5: buildWingFold,
   });
 
   function escapeText(value) {
@@ -200,28 +263,31 @@
     var markerId = 'fold-arrow-' + parsed.key + '-' + safeInstanceId(instanceId);
     var beforeContent = renderPanelContent(parts, 'before').replaceAll('url(#fold-arrow)', 'url(#' + markerId + ')');
     var afterContent = renderPanelContent(parts, 'after');
+    var foldGeometry = parts.geometry;
     return [
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" role="img" focusable="false" aria-label="', safeLabel,
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" role="img" focusable="false" aria-label="', safeLabel,
       '" data-diagram-key="', parsed.key,
+      '" data-panel-order="before-after',
       '" data-before-state="', parsed.planeId, '-state-', parsed.stepNumber - 1,
       '" data-after-state="', parsed.planeId, '-state-', parsed.stepNumber,
       '" data-before-shape="', parts.beforeState.shape,
-      '" data-after-shape="', parts.afterState.shape, '">',
-      '<title>', safeLabel, '</title><desc>', safeHint, '。左圖為折前，右圖為折後。</desc>',
+      '" data-after-shape="', parts.afterState.shape,
+      '" data-source-point="', pointText(foldGeometry.source),
+      '" data-target-point="', pointText(foldGeometry.target),
+      '" data-crease-start="', pointText(foldGeometry.creaseStart),
+      '" data-crease-end="', pointText(foldGeometry.creaseEnd), '">',
+      '<title>', safeLabel, '</title><desc>', safeHint, '。HTML 圖說依序標示折前與折後。</desc>',
       '<defs><marker id="', markerId, '" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" /></marker></defs>',
-      '<text class="diagram-panel-label" x="24" y="28">折前</text>',
-      '<text class="diagram-panel-label" x="384" y="28">折後</text>',
-      '<g transform="translate(24 42)">', beforeContent, '</g>',
-      '<path class="diagram-process" d="M342 142H370" marker-end="url(#', markerId, ')" />',
-      '<g transform="translate(384 42)">', afterContent, '</g>',
-      '<text class="diagram-hint" x="360" y="302" text-anchor="middle">', safeHint, '</text>',
+      '<g transform="translate(24 24)">', beforeContent, '</g>',
+      '<path class="diagram-process" d="M342 124H370" marker-end="url(#', markerId, ')" />',
+      '<g transform="translate(384 24)">', afterContent, '</g>',
       '</svg>',
     ].join('');
   }
 
   function renderFallbackDiagram(label) {
     var safeLabel = escapeText(label);
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" role="img" focusable="false" aria-label="' + safeLabel + '" data-diagram-key="fallback"><title>' + safeLabel + '</title><desc>圖解準備中。</desc><rect class="diagram-fallback" x="120" y="60" width="480" height="180" rx="4" /><text class="diagram-hint" x="360" y="158" text-anchor="middle">圖解準備中</text></svg>';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" role="img" focusable="false" aria-label="' + safeLabel + '" data-diagram-key="fallback"><title>' + safeLabel + '</title><desc>圖解準備中。</desc><rect class="diagram-fallback" x="120" y="50" width="480" height="170" rx="4" /><text class="diagram-fallback-text" x="360" y="145" text-anchor="middle">圖解準備中</text></svg>';
   }
 
   function renderFoldDiagram(diagramKey, label, instanceId) {

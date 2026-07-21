@@ -437,16 +437,24 @@
       'class="diagram-result-crease"',
       'class="diagram-direction"',
       'class="diagram-alignment"',
-      'class="diagram-hint"',
       '<title>',
       '<desc>',
-      '>折前<',
-      '>折後<',
     ];
+
+    function parsePoint(svg, attributeName) {
+      var match = new RegExp('data-' + attributeName + '="(-?[0-9.]+),(-?[0-9.]+)"').exec(svg);
+      assert(match, '缺少幾何契約 data-' + attributeName);
+      return { x: Number(match[1]), y: Number(match[2]), pathText: match[1] + ' ' + match[2] };
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
 
     namespace.data.planes.forEach(function (plane) {
       var previousAfterState = null;
       var previousAfterShape = null;
+      var previousAfterPath = null;
 
       plane.steps.forEach(function (step, stepIndex) {
         var svg = diagramApi.renderFoldDiagram(step.diagram, plane.name + ' ' + step.title);
@@ -454,6 +462,13 @@
         var afterState = /data-after-state="([^"]+)"/.exec(svg);
         var beforeShape = /data-before-shape="([^"]+)"/.exec(svg);
         var afterShape = /data-after-shape="([^"]+)"/.exec(svg);
+        var beforePath = /<path class="diagram-before"[^>]*d="([^"]+)"/.exec(svg);
+        var afterPath = /<path class="diagram-after"[^>]*d="([^"]+)"/.exec(svg);
+        var creasePath = /<path class="diagram-crease"[^>]*d="([^"]+)"/.exec(svg);
+        var sourcePoint = parsePoint(svg, 'source-point');
+        var targetPoint = parsePoint(svg, 'target-point');
+        var creaseStart = parsePoint(svg, 'crease-start');
+        var creaseEnd = parsePoint(svg, 'crease-end');
 
         requiredDiagramMarkers.forEach(function (marker) {
           assert(svg.includes(marker), step.diagram + ' 缺少 ' + marker);
@@ -462,15 +477,33 @@
         assert(svg.includes('data-target="' + expectedTargets[stepIndex] + '"'), step.diagram + ' 缺少正確對齊目標');
         assert(beforeState && afterState, step.diagram + ' 必須公開折前與折後狀態');
         assert(beforeShape && afterShape, step.diagram + ' 必須公開可驗證的折前與折後輪廓');
+        assert(beforePath && afterPath, step.diagram + ' 必須輸出實際折前與折後 path');
+        assert(creasePath, step.diagram + ' 必須輸出實際折線 path');
+        assert(creasePath[1].includes(creaseStart.pathText), step.diagram + ' 實際折線必須包含契約起點');
+        assert(creasePath[1].includes(creaseEnd.pathText), step.diagram + ' 實際折線必須包含契約終點');
+        assert(
+          svg.includes('data-target="' + expectedTargets[stepIndex] + '" cx="' + String(targetPoint.x) + '" cy="' + String(targetPoint.y) + '"'),
+          step.diagram + ' 的實際對齊點必須等於反射目標點',
+        );
+        assert(
+          Math.abs(distance(creaseStart, sourcePoint) - distance(creaseStart, targetPoint)) < 0.25,
+          step.diagram + ' 折線起點不是來源點與目標點的等距點',
+        );
+        assert(
+          Math.abs(distance(creaseEnd, sourcePoint) - distance(creaseEnd, targetPoint)) < 0.25,
+          step.diagram + ' 折線終點不是來源點與目標點的等距點',
+        );
         assertEqual(beforeState[1], plane.id + '-state-' + stepIndex, step.diagram + ' 折前狀態編號不正確');
         assertEqual(afterState[1], plane.id + '-state-' + (stepIndex + 1), step.diagram + ' 折後狀態編號不正確');
 
         if (previousAfterState) {
           assertEqual(beforeState[1], previousAfterState, step.diagram + ' 必須延續上一個步驟的折後狀態');
           assertEqual(beforeShape[1], previousAfterShape, step.diagram + ' 的折前輪廓必須等於上一個步驟的折後輪廓');
+          assertEqual(beforePath[1], previousAfterPath, step.diagram + ' 的實際折前 path 必須等於上一個步驟的實際折後 path');
         }
         previousAfterState = afterState[1];
         previousAfterShape = afterShape[1];
+        previousAfterPath = afterPath[1];
 
         if (stepIndex === 0) {
           assertMatch(svg, /data-target="right-long-edge"/);
@@ -481,24 +514,12 @@
           assertMatch(step.instruction, /斜邊/, step.diagram + ' 必須說明斜邊動作');
           assertMatch(step.instruction, /(貼齊|緊貼)中心線/, step.diagram + ' 必須說明斜邊對齊中心線');
         } else if (stepIndex === 3) {
-          var bodyShape = /data-before-shape="narrow-body-(\d+)-(\d+)"/.exec(svg);
           assertMatch(step.instruction, /左半機身往右合起/, step.diagram + ' 必須說明機身對摺方向');
           assertMatch(step.instruction, /左右外輪廓完全重合/, step.diagram + ' 必須說明機身對齊目標');
-          assert(bodyShape, step.diagram + ' 必須以前一步收窄機身為折前輪廓');
-          assert(
-            svg.includes('data-target="right-body-edge" cx="' + (300 - Number(bodyShape[1])) + '" cy="' + bodyShape[2] + '"'),
-            step.diagram + ' 的機身對齊點必須落在右側輪廓節點',
-          );
         } else if (stepIndex === 4) {
-          var finishedShape = /data-after-shape="finished-wing-(\d+)-(\d+)"/.exec(svg);
           assertMatch(step.instruction, /機翼|寬翼|長翼|箭翼|窄翼|羽翼/, step.diagram + ' 必須說明機翼動作');
           assertMatch(step.instruction, /翻面/, step.diagram + ' 必須說明翻面');
           assertMatch(step.instruction, /相同角度重複/, step.diagram + ' 必須說明另一側對稱重複');
-          assert(finishedShape, step.diagram + ' 必須產生完成機翼輪廓');
-          assert(
-            svg.includes('data-target="matching-wing-angle" cx="270" cy="' + finishedShape[2] + '"'),
-            step.diagram + ' 的機翼對齊點必須落在完成翼尖',
-          );
         }
       });
 
@@ -538,8 +559,7 @@
       '<path id="style-direction" class="diagram-direction" d="M0 0H10"></path>',
       '<path id="style-process" class="diagram-process" d="M0 0H10"></path>',
       '<circle id="style-point" class="diagram-alignment" cx="5" cy="5" r="2"></circle>',
-      '<text id="style-label" class="diagram-panel-label">折前</text>',
-      '<text id="style-hint" class="diagram-hint">提示</text>',
+      '<text id="style-fallback-text" class="diagram-fallback-text">準備中</text>',
       '<rect id="style-fallback" class="diagram-fallback"></rect>',
     ].join('');
     document.body.appendChild(fixture);
@@ -562,9 +582,8 @@
       assertEqual(style('style-process').strokeWidth, '5px');
       assertNotMatch(style('style-arrowhead').fill, /none|rgba\(0, 0, 0, 0\)/);
       assertNotMatch(style('style-point').fill, /none|rgba\(0, 0, 0, 0\)/);
-      assertEqual(style('style-label').fontSize, '24px');
-      assertEqual(style('style-label').fontWeight, '700');
-      assertEqual(style('style-hint').fontSize, '21px');
+      assertEqual(style('style-fallback-text').fontSize, '24px');
+      assertEqual(style('style-fallback-text').fontWeight, '700');
       assertNotMatch(style('style-fallback').fill, /none|rgba\(0, 0, 0, 0\)/);
     } finally {
       fixture.remove();

@@ -8,6 +8,8 @@
 
 **Tech Stack:** HTML5, CSS3, Vanilla JavaScript, SVG, native `<dialog>`, browser-only executable tests; no Node.js, Python, package manager, build tool, backend, or third-party library.
 
+> **2026-07-22 最終審查修正：** 下方早期程式片段保留規劃歷程，但最終實作以數學反射幾何為準：每步公開來源點、目標點與折線，測試折線兩端對來源／目標等距，並直接比較相鄰步驟的實際 path。會隨 SVG 縮小的折前／折後標籤與提示已移到至少 16px 的 HTML `.diagram-caption`；此修正取代下方早期 `.diagram-panel-label`／`.diagram-hint` 方案。
+
 ## Global Constraints
 
 - The site must run by opening `index.html` directly from the filesystem.
