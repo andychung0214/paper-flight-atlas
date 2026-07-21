@@ -282,9 +282,15 @@ function renderDifficultyFilters(planes, activeDifficulty) {
     const guideHash = buildPlaneHash(plane.id, safeStepIndex);
     const dialogId = `diagram-dialog-${plane.id}-${safeStepIndex}`;
     const diagramLabel = `${plane.name} 第 ${safeStepIndex + 1} 步放大示意圖`;
-    const svg = renderFoldDiagram(
+    const mainSvg = renderFoldDiagram(
       step.diagram,
       `${plane.name} 第 ${safeStepIndex + 1} 步 ${step.title}`,
+      'main',
+    );
+    const dialogSvg = renderFoldDiagram(
+      step.diagram,
+      `${plane.name} 第 ${safeStepIndex + 1} 步 ${step.title}`,
+      'dialog',
     );
 
   return `
@@ -299,7 +305,8 @@ function renderDifficultyFilters(planes, activeDifficulty) {
         <p class="guide-layout__summary">${escapeHtml(plane.summary)}</p>
         <p class="step-status" aria-live="polite">第 ${safeStepIndex + 1} 步 / 共 ${plane.steps.length} 步</p>
         <div class="diagram-frame" aria-label="摺紙示意圖">
-          ${svg}
+          ${mainSvg}
+          <p class="diagram-caption"><strong>左圖：折前</strong><span aria-hidden="true">→</span><strong>右圖：折後</strong><span>對齊提示：${escapeHtml(step.tip)}</span></p>
           <ul class="diagram-legend" aria-label="圖解符號說明">
             <li><span class="diagram-legend__sample diagram-legend__sample--crease" aria-hidden="true"></span>虛線＝這一步的新折線</li>
             <li><span class="diagram-legend__sample diagram-legend__sample--arrow" aria-hidden="true">→</span>箭頭＝紙面移動方向</li>
@@ -326,7 +333,8 @@ function renderDifficultyFilters(planes, activeDifficulty) {
               <button type="button" class="button button--ghost" data-action="close-diagram">關閉放大圖</button>
             </div>
             <div class="diagram-dialog__canvas">
-              ${svg}
+              ${dialogSvg}
+              <p class="diagram-caption"><strong>左圖：折前</strong><span aria-hidden="true">→</span><strong>右圖：折後</strong><span>對齊提示：${escapeHtml(step.tip)}</span></p>
             </div>
           </div>
         </dialog>

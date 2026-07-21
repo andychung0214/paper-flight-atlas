@@ -66,9 +66,10 @@
 | 移動紙面 | `.diagram-moving` | 本步要移動的紙層；半透明暖黃、主題色 `2px` 外框 |
 | 對齊點 | `.diagram-alignment` | 需要重合的位置；主題色圓點及米白 `2px` 描邊 |
 
-折前與折後的紙張輪廓分別使用 `.diagram-before`、`.diagram-after`，均採米白紙面、墨色 `3px` 實線。折後保留的完成折痕使用 `.diagram-result-crease`，以輔助墨色 `2px` 實線呈現，且不列入操作圖例。
+折前與折後的紙張輪廓分別使用 `.diagram-before`、`.diagram-after`，均採米白紙面、墨色 `3px` 實線。既有折痕使用 `.diagram-existing-crease` 淡線，當步完成折痕使用 `.diagram-result-crease` 輔助墨色 `2px` 實線；兩者不列入操作圖例。主圖與 dialog 的箭頭 marker 必須使用不同 id。
 
 - 主圖在一般畫面以容器全寬縮放，不得超出圖解框。
+- SVG 下方固定顯示 `.diagram-caption`，以至少 `16px` HTML 文字重述「左圖：折前 → 右圖：折後」與對齊提示，避免行動版縮放後只剩過小的 SVG 文字。
 - 圖例在 560px 以下為單欄，560px 起為雙欄；放大 dialog 不重複顯示圖例。
 - 420px 以下的放大圖保留水平捲動，讓完整 SVG 保持可讀；390 × 844 行動裝置的主畫面不得水平溢位。
 

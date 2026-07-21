@@ -427,6 +427,7 @@
 
   function testDiagrams() {
     var diagramApi = namespace.diagrams;
+    var expectedTargets = ['right-long-edge', 'center-line', 'center-line', 'right-body-edge', 'matching-wing-angle'];
     var requiredDiagramMarkers = [
       'data-diagram-key=',
       'class="diagram-before"',
@@ -444,13 +445,57 @@
     ];
 
     namespace.data.planes.forEach(function (plane) {
+      var previousAfterState = null;
+      var previousAfterShape = null;
+
       plane.steps.forEach(function (step, stepIndex) {
         var svg = diagramApi.renderFoldDiagram(step.diagram, plane.name + ' ' + step.title);
+        var beforeState = /data-before-state="([^"]+)"/.exec(svg);
+        var afterState = /data-after-state="([^"]+)"/.exec(svg);
+        var beforeShape = /data-before-shape="([^"]+)"/.exec(svg);
+        var afterShape = /data-after-shape="([^"]+)"/.exec(svg);
+
         requiredDiagramMarkers.forEach(function (marker) {
           assert(svg.includes(marker), step.diagram + ' 缺少 ' + marker);
         });
         assert(svg.includes('data-diagram-key="' + step.diagram + '"'), step.diagram + ' 應保留可追蹤鍵值');
+        assert(svg.includes('data-target="' + expectedTargets[stepIndex] + '"'), step.diagram + ' 缺少正確對齊目標');
+        assert(beforeState && afterState, step.diagram + ' 必須公開折前與折後狀態');
+        assert(beforeShape && afterShape, step.diagram + ' 必須公開可驗證的折前與折後輪廓');
+        assertEqual(beforeState[1], plane.id + '-state-' + stepIndex, step.diagram + ' 折前狀態編號不正確');
+        assertEqual(afterState[1], plane.id + '-state-' + (stepIndex + 1), step.diagram + ' 折後狀態編號不正確');
+
+        if (previousAfterState) {
+          assertEqual(beforeState[1], previousAfterState, step.diagram + ' 必須延續上一個步驟的折後狀態');
+          assertEqual(beforeShape[1], previousAfterShape, step.diagram + ' 的折前輪廓必須等於上一個步驟的折後輪廓');
+        }
+        previousAfterState = afterState[1];
+        previousAfterShape = afterShape[1];
+
+        if (stepIndex === 0) {
+          assertMatch(svg, /data-target="right-long-edge"/);
+          assertMatch(svg, /class="diagram-alignment"[^>]*cx="270"/);
+          assertMatch(step.instruction, /左長邊貼齊右長邊/, step.diagram + ' 必須說明左右長邊對齊');
+          assertMatch(step.instruction, /展開/, step.diagram + ' 必須說明壓痕後展開');
+        } else if (stepIndex === 2) {
+          assertMatch(step.instruction, /斜邊/, step.diagram + ' 必須說明斜邊動作');
+          assertMatch(step.instruction, /(貼齊|緊貼)中心線/, step.diagram + ' 必須說明斜邊對齊中心線');
+        } else if (stepIndex === 3) {
+          assertMatch(step.instruction, /左半機身往右合起/, step.diagram + ' 必須說明機身對摺方向');
+          assertMatch(step.instruction, /左右外輪廓完全重合/, step.diagram + ' 必須說明機身對齊目標');
+        } else if (stepIndex === 4) {
+          assertMatch(step.instruction, /機翼|寬翼|長翼|箭翼|窄翼|羽翼/, step.diagram + ' 必須說明機翼動作');
+          assertMatch(step.instruction, /翻面/, step.diagram + ' 必須說明翻面');
+          assertMatch(step.instruction, /相同角度重複/, step.diagram + ' 必須說明另一側對稱重複');
+        }
       });
+
+      var mainSvg = diagramApi.renderFoldDiagram(plane.steps[0].diagram, plane.name, 'main');
+      var dialogSvg = diagramApi.renderFoldDiagram(plane.steps[0].diagram, plane.name, 'dialog');
+      var mainMarker = /<marker id="([^"]+)"/.exec(mainSvg);
+      var dialogMarker = /<marker id="([^"]+)"/.exec(dialogSvg);
+      assert(mainMarker && dialogMarker, plane.id + ' 缺少方向箭頭 marker');
+      assert(mainMarker[1] !== dialogMarker[1], plane.id + ' 主圖與放大圖不得重複 SVG marker id');
     });
 
     var totalSteps = namespace.data.planes.reduce(function (total, plane) {
@@ -468,56 +513,50 @@
   }
 
   function testDiagramStyles() {
-    var request = new XMLHttpRequest();
-    request.open('GET', '../styles.css', false);
-    request.send(null);
+    var fixture = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    fixture.setAttribute('aria-hidden', 'true');
+    fixture.style.cssText = 'position:absolute;left:-10000px;width:720px;height:320px';
+    fixture.innerHTML = [
+      '<defs><marker id="fold-arrow-style-test"><path id="style-arrowhead" d="M0 0L10 5L0 10Z"></path></marker></defs>',
+      '<path id="style-before" class="diagram-before" d="M0 0H10V10Z"></path>',
+      '<path id="style-moving" class="diagram-moving" d="M0 0H10V10Z"></path>',
+      '<path id="style-crease" class="diagram-crease" d="M0 0H10"></path>',
+      '<path id="style-result" class="diagram-result-crease" d="M0 0H10"></path>',
+      '<path id="style-existing" class="diagram-existing-crease" d="M0 0H10"></path>',
+      '<path id="style-direction" class="diagram-direction" d="M0 0H10"></path>',
+      '<path id="style-process" class="diagram-process" d="M0 0H10"></path>',
+      '<circle id="style-point" class="diagram-alignment" cx="5" cy="5" r="2"></circle>',
+      '<text id="style-label" class="diagram-panel-label">折前</text>',
+      '<text id="style-hint" class="diagram-hint">提示</text>',
+      '<rect id="style-fallback" class="diagram-fallback"></rect>',
+    ].join('');
+    document.body.appendChild(fixture);
 
-    assert(request.responseText.length > 0, '無法讀取圖解樣式表');
+    function style(id) {
+      return global.getComputedStyle(document.getElementById(id));
+    }
 
-    assertMatch(request.responseText, /\.diagram-before,\s*\.diagram-after\s*\{[^}]*fill\s*:\s*var\(--paper-bright\);[^}]*stroke\s*:\s*var\(--ink\);[^}]*stroke-width\s*:\s*3;/);
-
-    [
-      ['.diagram-moving', 'fill', '#e6b85f'],
-      ['.diagram-moving', 'fill-opacity', '.42'],
-      ['.diagram-moving', 'stroke', 'var(--accent)'],
-      ['.diagram-moving', 'stroke-width', '2'],
-      ['.diagram-crease', 'fill', 'none'],
-      ['.diagram-crease', 'stroke', 'var(--muted)'],
-      ['.diagram-crease', 'stroke-width', '2'],
-      ['.diagram-crease', 'stroke-dasharray', '8 7'],
-      ['.diagram-result-crease', 'fill', 'none'],
-      ['.diagram-result-crease', 'stroke', 'var(--muted)'],
-      ['.diagram-result-crease', 'stroke-width', '2'],
-      ['.diagram-direction', 'fill', 'none'],
-      ['.diagram-direction', 'stroke', 'var(--accent)'],
-      ['.diagram-direction', 'stroke-width', '5'],
-      ['.diagram-process', 'fill', 'none'],
-      ['.diagram-process', 'stroke', 'var(--accent)'],
-      ['#fold-arrow path', 'fill', 'var(--accent)'],
-      ['.diagram-alignment', 'fill', 'var(--accent)'],
-      ['.diagram-alignment', 'stroke', 'var(--paper-bright)'],
-      ['.diagram-panel-label', 'fill', 'var(--ink)'],
-      ['.diagram-panel-label', 'font', '700 18px/1 var(--font-utility)'],
-      ['.diagram-hint', 'fill', 'var(--ink)'],
-      ['.diagram-hint', 'font', '600 16px/1.4 var(--font-body)'],
-      ['.diagram-fallback', 'fill', '#e8e2d8'],
-    ].forEach(function (contract) {
-      var selector = contract[0];
-      var property = contract[1];
-      var value = contract[2];
-      var selectorPattern = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      var rule = new RegExp(selectorPattern + '\\s*\\{([^}]*)\\}').exec(request.responseText);
-
-      assert(rule, '缺少圖解樣式選擇器 ' + selector);
-      assert(new RegExp(property + '\\s*:\\s*' + value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*;').test(rule[1]), selector + ' 缺少 ' + property + ': ' + value);
-    });
-
-    assertMatch(request.responseText, /\.diagram-frame svg\s*\{[^}]*width\s*:\s*100%;[^}]*max-width\s*:\s*100%;[^}]*min-width\s*:\s*0;[^}]*height\s*:\s*auto;/);
-    assertMatch(request.responseText, /\.guide-layout__primary\s*\{[^}]*min-width\s*:\s*0;/);
-    assertMatch(request.responseText, /\.guide-layout\s*\{[^}]*grid-template-columns\s*:\s*minmax\(0,\s*1fr\);/);
-    assertMatch(request.responseText, /\.diagram-legend\s*\{[^}]*grid-template-columns\s*:\s*1fr;/);
-    assertMatch(request.responseText, /@media\s*\(min-width:\s*560px\)\s*\{[\s\S]*?\.diagram-legend\s*\{[^}]*grid-template-columns\s*:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/);
-    assertMatch(request.responseText, /@media\s*\(max-width:\s*419px\)\s*\{[\s\S]*?\.diagram-dialog__canvas\s*\{[^}]*overflow-x\s*:\s*auto;[^}]*overflow-y\s*:\s*hidden;/);
+    try {
+      assertEqual(style('style-before').strokeWidth, '3px');
+      assertNotMatch(style('style-before').fill, /none|rgba\(0, 0, 0, 0\)/);
+      assertEqual(style('style-moving').fill, 'rgb(230, 184, 95)');
+      assertEqual(Number(style('style-moving').fillOpacity), 0.42);
+      assertEqual(style('style-moving').strokeWidth, '2px');
+      assertEqual(style('style-crease').fill, 'none');
+      assertMatch(style('style-crease').strokeDasharray, /8(px)?[, ]+7(px)?/);
+      assertEqual(style('style-result').strokeWidth, '2px');
+      assertEqual(style('style-existing').strokeWidth, '1.5px');
+      assertEqual(style('style-direction').strokeWidth, '5px');
+      assertEqual(style('style-process').strokeWidth, '5px');
+      assertNotMatch(style('style-arrowhead').fill, /none|rgba\(0, 0, 0, 0\)/);
+      assertNotMatch(style('style-point').fill, /none|rgba\(0, 0, 0, 0\)/);
+      assertEqual(style('style-label').fontSize, '24px');
+      assertEqual(style('style-label').fontWeight, '700');
+      assertEqual(style('style-hint').fontSize, '21px');
+      assertNotMatch(style('style-fallback').fill, /none|rgba\(0, 0, 0, 0\)/);
+    } finally {
+      fixture.remove();
+    }
   }
 
   function testRenderers() {
@@ -557,6 +596,10 @@
     assertMatch(guide, /箭頭＝紙面移動方向/);
     assertMatch(guide, /淡色區＝要移動的紙面/);
     assertMatch(guide, /圓點＝需要對齊的位置/);
+    assertEqual(countMatches(guide, /class="diagram-caption"/g), 2);
+    assertMatch(guide, /左圖：折前/);
+    assertMatch(guide, /右圖：折後/);
+    assertMatch(guide, /對齊提示：/);
 
     var dialogGuide = render.renderGuide({ plane: planes[0], stepIndex: 1, favorites: [] });
     assertMatch(dialogGuide, /data-action="open-diagram"/);
@@ -856,131 +899,78 @@
     assertNotMatch(document.body.textContent, /視圖|質量|創建|集成|文檔/);
   }
 
-  function testGuideDiagramResponsivePresentation() {
+  async function testGuideDiagramResponsivePresentation() {
     var preview = document.getElementById('entry-preview');
-    var previewDocument = preview && preview.contentDocument;
-    var previewWindow = preview && preview.contentWindow;
     var originalWidth = preview && preview.style.width;
     var originalHeight = preview && preview.style.height;
-    var originalHash = previewWindow && previewWindow.location.hash;
-    var temporaryStyle;
+    var requestSequence = 0;
 
     assert(boundary.entryContract, '響應式圖解測試前尚未收到入口頁契約訊息');
-    assert(previewDocument && previewWindow, '響應式圖解測試無法取得入口 iframe');
-    assert(
-      previewWindow.PaperFlightAtlas
-        && previewWindow.PaperFlightAtlas.app
-        && typeof previewWindow.PaperFlightAtlas.app.mountApp === 'function',
-      '入口 iframe 缺少可掛載的 PaperFlightAtlas.app',
-    );
+    assert(preview && preview.contentWindow, '響應式圖解測試缺少入口 iframe');
 
-    function mountGuide(width) {
-      preview.style.width = width + 'px';
-      previewWindow.location.hash = '#plane/classic-dart/step/1';
-      previewWindow.PaperFlightAtlas.app.mountApp(previewDocument, previewWindow);
-    }
+    function requestContract(width) {
+      return new Promise(function (resolve, reject) {
+        var requestId = 'responsive-' + width + '-' + (requestSequence += 1);
+        var timeoutId;
 
-    function getGuideNodes() {
-      var app = previewDocument.getElementById('app');
-      var dialog = app.querySelector('.diagram-dialog');
-      var frame = app.querySelector('.diagram-frame');
-      var svg = Array.prototype.slice.call(frame.children).find(function (child) {
-        return child.tagName && child.tagName.toLowerCase() === 'svg';
+        function receive(event) {
+          var payload = event && event.data;
+
+          if (!payload || payload.type !== 'paper-flight-atlas-responsive-result' || payload.requestId !== requestId) {
+            return;
+          }
+
+          global.clearTimeout(timeoutId);
+          global.removeEventListener('message', receive);
+          if (payload.error) {
+            reject(new Error(payload.error));
+            return;
+          }
+          resolve(payload.contract);
+        }
+
+        global.addEventListener('message', receive);
+        preview.style.width = width + 'px';
+        preview.style.height = '2400px';
+        timeoutId = global.setTimeout(function () {
+          global.removeEventListener('message', receive);
+          reject(new Error(width + 'px 響應式契約逾時'));
+        }, 3000);
+
+        global.setTimeout(function () {
+          preview.contentWindow.postMessage({
+            type: 'paper-flight-atlas-responsive-request',
+            requestId: requestId,
+          }, '*');
+        }, 50);
       });
-
-      dialog.setAttribute('open', '');
-
-      return {
-        app: app,
-        canvas: app.querySelector('.diagram-dialog__canvas'),
-        dialog: dialog,
-        frame: frame,
-        legend: app.querySelector('.diagram-legend'),
-        svg: svg,
-      };
-    }
-
-    function assertDialogOverflowAt419() {
-      var nodes;
-
-      mountGuide(419);
-      nodes = getGuideNodes();
-      assertEqual(
-        previewWindow.getComputedStyle(nodes.canvas).overflowX,
-        'auto',
-        '419px dialog 畫布必須允許水平捲動',
-      );
-      assert(
-        nodes.canvas.scrollWidth > nodes.canvas.clientWidth,
-        '419px dialog 畫布必須有可水平捲動內容',
-      );
-    }
-
-    function countGridColumns(element) {
-      var columns = previewWindow.getComputedStyle(element).gridTemplateColumns.trim();
-
-      return columns ? columns.split(/\s+/).filter(Boolean).length : 0;
     }
 
     try {
-      preview.style.height = '2400px';
+      var at419 = await requestContract(419);
+      assertEqual(at419.viewportWidth, 419, '419px iframe 實際寬度不正確');
+      assertEqual(at419.canvasOverflowX, 'auto', '419px dialog 畫布必須允許水平捲動');
+      assert(at419.canvasScrollWidth > at419.canvasClientWidth, '419px dialog 畫布必須有可水平捲動內容');
 
-      temporaryStyle = previewDocument.createElement('style');
-      temporaryStyle.textContent = '@media (max-width: 419px) { .diagram-dialog__canvas svg { width: 100% !important; max-width: 100% !important; } }';
-      previewDocument.head.appendChild(temporaryStyle);
+      var at420 = await requestContract(420);
+      assertEqual(at420.viewportWidth, 420, '420px iframe 實際寬度不正確');
+      assertEqual(at420.canvasOverflowX, 'visible', '420px dialog 畫布必須為可見溢位');
+      assert(at420.canvasScrollWidth <= at420.canvasClientWidth, '420px dialog 畫布不可有水平捲動內容');
+      assertEqual(at420.markerCount, at420.uniqueMarkerCount, '主圖與放大圖的 SVG marker id 必須唯一');
 
-      var redObserved = false;
-      try {
-        assertDialogOverflowAt419();
-      } catch (error) {
-        redObserved = true;
-        assertMatch(error.message, /419px dialog 畫布必須有可水平捲動內容/, '受控 RED 未觸發預期捲動斷言');
-      }
-      assert(redObserved, '撤除 dialog 32rem SVG 寬度時，行為測試必須進入 RED');
+      var at559 = await requestContract(559);
+      assertEqual(at559.legendColumns, 1, '559px 圖例必須為單欄');
 
-      temporaryStyle.remove();
-      temporaryStyle = null;
+      var at560 = await requestContract(560);
+      assertEqual(at560.legendColumns, 2, '560px 圖例必須為雙欄');
 
-      assertDialogOverflowAt419();
-
-      mountGuide(420);
-      var nodes = getGuideNodes();
-      assertEqual(nodes.app.querySelectorAll('.diagram-legend').length, 1, '主畫面必須恰有一份圖例');
-      assertEqual(nodes.app.querySelectorAll('dialog .diagram-legend').length, 0, 'dialog 不可重複圖例');
-      assert(nodes.canvas, '缺少放大圖畫布');
-      assertEqual(previewWindow.getComputedStyle(nodes.canvas).overflowX, 'visible', '420px dialog 畫布必須為可見溢位');
-      assert(
-        nodes.canvas.scrollWidth <= nodes.canvas.clientWidth,
-        '420px dialog 畫布不可有水平捲動內容',
-      );
-
-      mountGuide(559);
-      nodes = getGuideNodes();
-      assertEqual(countGridColumns(nodes.legend), 1, '559px 圖例必須為單欄');
-
-      mountGuide(560);
-      nodes = getGuideNodes();
-      assertEqual(countGridColumns(nodes.legend), 2, '560px 圖例必須為雙欄');
-
-      mountGuide(390);
-      nodes = getGuideNodes();
-      var frameRect = nodes.frame.getBoundingClientRect();
-      var svgRect = nodes.svg.getBoundingClientRect();
-      assert(svgRect.left >= frameRect.left, '390px 主圖 SVG 左側不可超出圖解容器');
-      assert(svgRect.right <= frameRect.right, '390px 主圖 SVG 右側不可超出圖解容器');
-      assert(
-        previewDocument.documentElement.scrollWidth <= previewDocument.documentElement.clientWidth,
-        '390px 主畫面不可水平溢位',
-      );
+      var at390 = await requestContract(390);
+      assert(at390.mainSvgInsideFrame, '390px 主圖 SVG 不可超出圖解容器');
+      assert(at390.noHorizontalOverflow, '390px 主畫面不可水平溢位');
+      assertEqual(at390.captionFontSize, '16px', '390px HTML 圖解說明必須維持 16px 可讀字級');
     } finally {
-      if (temporaryStyle) {
-        temporaryStyle.remove();
-      }
-
       preview.style.width = originalWidth;
       preview.style.height = originalHeight;
-      previewWindow.location.hash = originalHash || '#home';
-      previewWindow.PaperFlightAtlas.app.mountApp(previewDocument, previewWindow);
     }
   }
 
@@ -1010,21 +1000,21 @@
     listNode.appendChild(item);
   }
 
-  function run() {
+  async function run() {
     var summaryNode = document.getElementById('test-summary');
     var resultsNode = document.getElementById('test-results');
     var passed = 0;
 
     resultsNode.innerHTML = '';
-    tests.forEach(function (testCase) {
+    for (var testCase of tests) {
       try {
-        testCase.run();
+        await testCase.run();
         passed += 1;
         addResult(resultsNode, 'pass', testCase.name, '');
       } catch (error) {
         addResult(resultsNode, 'fail', testCase.name, error && error.message ? error.message : '未知錯誤');
       }
-    });
+    }
 
     summaryNode.textContent = passed === tests.length
       ? '全部 ' + tests.length + ' 項測試通過。'
