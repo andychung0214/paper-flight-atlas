@@ -465,6 +465,7 @@
         var beforePath = /<path class="diagram-before"[^>]*d="([^"]+)"/.exec(svg);
         var afterPath = /<path class="diagram-after"[^>]*d="([^"]+)"/.exec(svg);
         var creasePath = /<path class="diagram-crease"[^>]*d="([^"]+)"/.exec(svg);
+        var movingPath = /<path class="diagram-moving"[^>]*d="([^"]+)"/.exec(svg);
         var sourcePoint = parsePoint(svg, 'source-point');
         var targetPoint = parsePoint(svg, 'target-point');
         var creaseStart = parsePoint(svg, 'crease-start');
@@ -479,8 +480,12 @@
         assert(beforeShape && afterShape, step.diagram + ' 必須公開可驗證的折前與折後輪廓');
         assert(beforePath && afterPath, step.diagram + ' 必須輸出實際折前與折後 path');
         assert(creasePath, step.diagram + ' 必須輸出實際折線 path');
+        assert(movingPath, step.diagram + ' 必須輸出實際移動紙面 path');
         assert(creasePath[1].includes(creaseStart.pathText), step.diagram + ' 實際折線必須包含契約起點');
         assert(creasePath[1].includes(creaseEnd.pathText), step.diagram + ' 實際折線必須包含契約終點');
+        assert(movingPath[1].includes(sourcePoint.pathText), step.diagram + ' 移動紙面必須包含來源點');
+        assert(movingPath[1].includes(creaseStart.pathText), step.diagram + ' 移動紙面必須連到折線起點');
+        assert(movingPath[1].includes(creaseEnd.pathText), step.diagram + ' 移動紙面必須連到折線終點');
         assert(
           svg.includes('data-target="' + expectedTargets[stepIndex] + '" cx="' + String(targetPoint.x) + '" cy="' + String(targetPoint.y) + '"'),
           step.diagram + ' 的實際對齊點必須等於反射目標點',

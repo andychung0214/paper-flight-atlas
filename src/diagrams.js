@@ -147,12 +147,12 @@
     return diagramParts(
       model.states[0],
       model.states[1],
-      '<path class="diagram-moving" d="M30 8H150V198H30Z" />',
+      '<path class="diagram-moving" d="M30 8L150 8L150 198L30 198Z" />',
       '<path class="diagram-crease" d="M150 8L150 198" />',
-      '<path class="diagram-direction" d="M42 70Q150 22 258 70" marker-end="url(#fold-arrow)" />',
-      '<circle class="diagram-alignment" data-target="right-long-edge" cx="270" cy="70" r="7" />',
+      '<path class="diagram-direction" d="M42 24Q150 2 258 24" marker-end="url(#fold-arrow)" />',
+      '<circle class="diagram-alignment" data-target="right-long-edge" cx="270" cy="8" r="7" />',
       STEP_HINTS[1],
-      geometry(point(30, 70), point(270, 70), point(150, 8), point(150, 198))
+      geometry(point(30, 8), point(270, 8), point(150, 8), point(150, 198))
     );
   }
 
@@ -161,7 +161,7 @@
     return diagramParts(
       model.states[1],
       model.states[2],
-      '<path class="diagram-moving" d="M30 8H150L30 128ZM270 8H150L270 128Z" />',
+      '<path class="diagram-moving" d="M30 8L150 8L30 128ZM270 8L150 8L270 128Z" />',
       '<path class="diagram-crease" d="M150 8L30 128M150 8L270 128" />',
       '<path class="diagram-direction" d="M42 24Q92 70 140 118M258 24Q208 70 160 118" marker-end="url(#fold-arrow)" />',
       '<circle class="diagram-alignment" data-target="center-line" cx="150" cy="128" r="7" />',
@@ -178,7 +178,7 @@
     return diagramParts(
       model.states[2],
       model.states[3],
-      '<path class="diagram-moving" d="M150 8L30 128V198H' + formatNumber(left.x) + 'ZM150 8L270 128V198H' + formatNumber(right.x) + 'Z" />',
+      '<path class="diagram-moving" d="M150 8L30 128L30 198L' + pathPoint(left) + 'ZM150 8L270 128L270 198L' + pathPoint(right) + 'Z" />',
       '<path class="diagram-crease" d="M150 8L' + pathPoint(left) + 'M150 8L' + pathPoint(right) + '" />',
       '<path class="diagram-direction" d="M42 136Q92 156 140 ' + formatNumber(target.y - 4) + 'M258 136Q208 156 160 ' + formatNumber(target.y - 4) + '" marker-end="url(#fold-arrow)" />',
       '<circle class="diagram-alignment" data-target="center-line" cx="150" cy="' + formatNumber(target.y) + '" r="7" />',
@@ -194,7 +194,7 @@
     return diagramParts(
       model.states[3],
       model.states[4],
-      '<path class="diagram-moving" d="M150 8L' + pathPoint(left) + 'H150Z" />',
+      '<path class="diagram-moving" d="M150 8L' + pathPoint(left) + 'L150 198Z" />',
       '<path class="diagram-crease" d="M150 8L150 198" />',
       '<path class="diagram-direction" d="M' + formatNumber(left.x + 8) + ' 174Q150 108 ' + formatNumber(right.x - 8) + ' 174" marker-end="url(#fold-arrow)" />',
       '<circle class="diagram-alignment" data-target="right-body-edge" cx="' + formatNumber(right.x) + '" cy="198" r="7" />',
